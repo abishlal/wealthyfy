@@ -1,0 +1,29 @@
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+
+# Node.js
+node_modules/
+
+# Frontend
+dist/
+.next/
+
+# Backend
+.venv/
+__pycache__/
+*.pyc
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
