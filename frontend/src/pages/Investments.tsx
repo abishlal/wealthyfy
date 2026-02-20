@@ -109,56 +109,56 @@ const InvestmentsPage: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">Investments Portfolio</h2>
-                <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold text-gray-800">Investments</h2>
+                <div className="flex w-full sm:w-auto gap-2">
                     <button
                         onClick={() => window.open(`${api.defaults.baseURL}/investments/export`, '_blank')}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Download size={20} /> Export CSV
+                        <Download size={18} /> <span className="hidden xs:inline">Export</span>
                     </button>
                     <button
                         onClick={openAddModal}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Plus size={20} /> Add Investment
+                        <Plus size={18} /> Add
                     </button>
                 </div>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Invested</p>
-                            <h3 className="text-2xl font-bold text-gray-900">₹{summary.totalInvested.toLocaleString()}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Total Invested</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.totalInvested.toLocaleString()}</h3>
                         </div>
-                        <div className="p-3 bg-purple-100 rounded-full text-purple-600">
-                            <IndianRupee size={24} />
+                        <div className="hidden sm:block p-3 bg-purple-100 rounded-full text-purple-600">
+                            <IndianRupee size={20} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Transactions</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{summary.count}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Transactions</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">{summary.count}</h3>
                         </div>
-                        <div className="p-3 bg-blue-100 rounded-full text-blue-600">
-                            <Activity size={24} />
+                        <div className="hidden sm:block p-3 bg-blue-100 rounded-full text-blue-600">
+                            <Activity size={20} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
+                <div className="col-span-2 lg:col-span-1 bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-indigo-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Top Asset Class</p>
-                            <h3 className="text-xl font-bold text-gray-900 truncate">{summary.topType}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Top Asset Class</p>
+                            <h3 className="text-lg md:text-xl font-black text-gray-900 truncate">{summary.topType}</h3>
                         </div>
-                        <div className="p-3 bg-indigo-100 rounded-full text-indigo-600">
-                            <PieChart size={24} />
+                        <div className="hidden sm:block p-3 bg-indigo-100 rounded-full text-indigo-600">
+                            <PieChart size={20} />
                         </div>
                     </div>
                 </div>
