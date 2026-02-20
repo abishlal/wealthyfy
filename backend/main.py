@@ -4,12 +4,14 @@ from database import engine, Base
 from routers import (
     expenses,
     income,
-    income,
     liability,
     investment,
     dashboard,
     dashboard_router,
     settings_router,
+    budget,
+    projections,
+    receivables,
 )
 
 app = FastAPI(title="Personal Finance Tracker")
@@ -56,6 +58,9 @@ app.include_router(investment.router)
 app.include_router(dashboard.router)
 app.include_router(dashboard_router.router)
 app.include_router(settings_router.router)
+app.include_router(budget.router)
+app.include_router(projections.router)
+app.include_router(receivables.router)
 
 
 @app.get("/")

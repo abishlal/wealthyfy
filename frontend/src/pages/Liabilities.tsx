@@ -168,84 +168,69 @@ const LiabilitiesPage: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">Liabilities & Debt Management</h2>
-                <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold text-gray-800">Liabilities & Debt</h2>
+                <div className="flex w-full sm:w-auto gap-2">
                     <button
                         onClick={() => window.open(`${api.defaults.baseURL}/liabilities/export`, '_blank')}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Download size={20} /> Export CSV
+                        <Download size={18} /> <span className="hidden xs:inline">Export</span>
                     </button>
                     <button
                         onClick={openAddModal}
-                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Plus size={20} /> Add Liability
+                        <Plus size={18} /> Add
                     </button>
                 </div>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-red-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Liability</p>
-                            <h3 className="text-2xl font-bold text-gray-900">₹{summary.totalLiability.toLocaleString()}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Total Liability</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.totalLiability.toLocaleString()}</h3>
                         </div>
-                        <div className="p-3 bg-red-100 rounded-full text-red-600">
-                            <IndianRupee size={24} />
+                        <div className="hidden sm:block p-3 bg-red-100 rounded-full text-red-600">
+                            <IndianRupee size={20} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-green-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Total Paid</p>
-                            <h3 className="text-2xl font-bold text-gray-900">₹{summary.totalPaid.toLocaleString()}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Total Paid</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.totalPaid.toLocaleString()}</h3>
                         </div>
-                        <div className="p-3 bg-green-100 rounded-full text-green-600">
-                            <TrendingDown size={24} />
+                        <div className="hidden sm:block p-3 bg-green-100 rounded-full text-green-600">
+                            <TrendingDown size={20} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Outstanding</p>
-                            <h3 className="text-2xl font-bold text-gray-900">₹{summary.outstanding.toLocaleString()}</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Outstanding</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.outstanding.toLocaleString()}</h3>
                         </div>
-                        <div className="p-3 bg-orange-100 rounded-full text-orange-600">
-                            <CreditCard size={24} />
+                        <div className="hidden sm:block p-3 bg-orange-100 rounded-full text-orange-600">
+                            <CreditCard size={20} />
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Payoff Progress</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{summary.progress.toFixed(1)}%</h3>
+                            <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Progress</p>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">{summary.progress.toFixed(0)}%</h3>
                         </div>
-                        <div className="w-16 h-16 relative">
+                        <div className="w-8 h-8 md:w-12 md:h-12 relative">
                             <svg className="w-full h-full" viewBox="0 0 36 36">
-                                <path
-                                    d="M18 2.0845
-                                    a 15.9155 15.9155 0 0 1 0 31.831
-                                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                                    fill="none"
-                                    stroke="#E5E7EB"
-                                    strokeWidth="4"
-                                />
-                                <path
-                                    d="M18 2.0845
-                                    a 15.9155 15.9155 0 0 1 0 31.831
-                                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                                    fill="none"
-                                    stroke="#3B82F6"
-                                    strokeWidth="4"
-                                    strokeDasharray={`${summary.progress}, 100`}
-                                />
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${summary.progress}, 100`} strokeLinecap="round" transform="rotate(-90 18 18)" />
                             </svg>
                         </div>
                     </div>
@@ -316,10 +301,10 @@ const LiabilitiesPage: React.FC = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {payments.map((payment) => (
-                                <tr key={payment.id}>
+                                <tr key={payment.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.payment_date}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{getLiabilityName(payment.liability_id)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">+₹{payment.amount.toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">+₹{payment.amount.toLocaleString()}</td>
                                 </tr>
                             ))}
                             {payments.length === 0 && (

@@ -70,52 +70,52 @@ const DailyOverview: React.FC = () => {
             {!loading && dailyData && (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg shadow-md">
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl shadow-sm border border-green-200">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-green-700 font-medium">Income</p>
-                                    <p className="text-2xl font-bold text-green-800">₹{(dailyData.total_income || 0).toLocaleString()}</p>
+                                    <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Income</p>
+                                    <p className="text-lg font-black text-green-800">₹{(dailyData.total_income || 0).toLocaleString()}</p>
                                 </div>
-                                <TrendingUp className="text-green-600 w-8 h-8" />
+                                <TrendingUp className="text-green-600 w-5 h-5" />
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg shadow-md">
+                        <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl shadow-sm border border-red-200">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-red-700 font-medium">Expense</p>
-                                    <p className="text-2xl font-bold text-red-800">₹{(dailyData.total_expense || 0).toLocaleString()}</p>
+                                    <p className="text-[10px] text-red-700 font-bold uppercase tracking-wider">Expense</p>
+                                    <p className="text-lg font-black text-red-800">₹{(dailyData.total_expense || 0).toLocaleString()}</p>
                                 </div>
-                                <TrendingDown className="text-red-600 w-8 h-8" />
+                                <TrendingDown className="text-red-600 w-5 h-5" />
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-md">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl shadow-sm border border-blue-200">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-blue-700 font-medium">Investment</p>
-                                    <p className="text-2xl font-bold text-blue-800">₹{(dailyData.total_investment || 0).toLocaleString()}</p>
+                                    <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Invest.</p>
+                                    <p className="text-lg font-black text-blue-800">₹{(dailyData.total_investment || 0).toLocaleString()}</p>
                                 </div>
-                                <Wallet className="text-blue-600 w-8 h-8" />
+                                <Wallet className="text-blue-600 w-5 h-5" />
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-md">
+                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl shadow-sm border border-purple-200">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-purple-700 font-medium">Debt Paid</p>
-                                    <p className="text-2xl font-bold text-purple-800">₹{(dailyData.total_debt_paid || 0).toLocaleString()}</p>
+                                    <p className="text-[10px] text-purple-700 font-bold uppercase tracking-wider">Debt</p>
+                                    <p className="text-lg font-black text-purple-800">₹{(dailyData.total_debt_paid || 0).toLocaleString()}</p>
                                 </div>
-                                <CreditCard className="text-purple-600 w-8 h-8" />
+                                <CreditCard className="text-purple-600 w-5 h-5" />
                             </div>
                         </div>
 
-                        <div className={`bg-gradient-to-br ${dailyData.net >= 0 ? 'from-teal-50 to-teal-100' : 'from-orange-50 to-orange-100'} p-6 rounded-lg shadow-md`}>
+                        <div className={`col-span-2 lg:col-span-1 bg-gradient-to-br ${dailyData.net >= 0 ? 'from-teal-50 to-teal-100 border-teal-200' : 'from-orange-50 to-orange-100 border-orange-200'} p-4 rounded-xl shadow-sm border`}>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className={`text-sm font-medium ${dailyData.net >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>Net</p>
-                                    <p className={`text-2xl font-bold ${dailyData.net >= 0 ? 'text-teal-800' : 'text-orange-800'}`}>₹{(dailyData.net || 0).toLocaleString()}</p>
+                                    <p className={`text-[10px] font-bold uppercase tracking-wider ${dailyData.net >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>Net</p>
+                                    <p className={`text-lg font-black ${dailyData.net >= 0 ? 'text-teal-800' : 'text-orange-800'}`}>₹{(dailyData.net || 0).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>
@@ -139,7 +139,7 @@ const DailyOverview: React.FC = () => {
                                                 fill="#8884d8"
                                                 dataKey="value"
                                             >
-                                                {categoryData.map((entry, index) => (
+                                                {categoryData.map((_, index) => (
                                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                 ))}
                                             </Pie>

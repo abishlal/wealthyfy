@@ -14,6 +14,11 @@ class ExpenseBase(BaseModel):
     account_id: UUID
     notes: Optional[str] = None
 
+    # Shared Expense fields
+    is_shared: Optional[bool] = False
+    total_people: Optional[int] = 1
+    friend_shares: Optional[dict] = None  # { "Friend Name": amount }
+
 
 class ExpenseCreate(ExpenseBase):
     pass
@@ -108,6 +113,55 @@ class InvestmentCreate(InvestmentBase):
 
 class Investment(InvestmentBase):
     id: UUID
+
+    class Config:
+        from_attributes = True
+
+
+# Budget Schemas
+class BudgetBase(BaseModel):
+    category_id: UUID
+    amount: Decimal
+    month: int
+    year: int
+
+
+class BudgetCreate(BudgetBase):
+    pass
+
+
+class Budget(BudgetBase):
+    id: UUID
+
+    class Config:
+        from_attributes = True
+
+
+# Receivable Schemas
+class ReceivableBase(BaseModel):
+    date: date
+    person_name: str
+    total_owed: Decimal
+    amount_received: Decimal = Decimal("0")
+    status: str = "pending"
+    reference_type: Optional[str] = None
+    reference_id: Optional[UUID] = None
+    notes: Optional[str] = None
+
+
+class ReceivableCreate(ReceivableBase):
+    pass
+
+
+class ReceivableUpdate(BaseModel):
+    amount_received: Decimal
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class Receivable(ReceivableBase):
+    id: UUID
+    timestamp: datetime
 
     class Config:
         from_attributes = True

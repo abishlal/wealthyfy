@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +8,9 @@ import Income from './pages/Income';
 import Liabilities from './pages/Liabilities';
 import Investments from './pages/Investments';
 import Settings from './pages/Settings';
+import Budgets from './pages/Budgets';
+import Planning from './pages/Planning';
+import Receivables from './pages/Receivables';
 
 function App() {
   return (
@@ -23,6 +25,9 @@ function App() {
           <Route path="liabilities" element={<Liabilities />} />
           <Route path="investments" element={<Investments />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="budgets" element={<Budgets />} />
+          <Route path="planning" element={<Planning />} />
+          <Route path="receivables" element={<Receivables />} />
         </Route>
       </Routes>
     </Router>

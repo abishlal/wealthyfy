@@ -9,6 +9,7 @@ from models.models import (
     LiabilityPayment,
     Investment,
     LookupValue,
+    Receivable,
 )
 
 
@@ -52,14 +53,29 @@ class DashboardService:
         )
         total_liability_paid = liability_result.scalar() or 0
 
-        # Calculate net: Income - Expense - Investment - Liability Paid
-        net = total_income - total_expense - total_investment - total_liability_paid
+        # total_receivable_received
+        receiv_res = await self.db.execute(
+            select(func.sum(Receivable.amount_received)).where(
+                Receivable.date == target_date
+            )
+        )
+        total_receivable_received = receiv_res.scalar() or 0
+
+        # Calculate net: Income + ReceivableReceived - Expense - Investment - Liability Paid
+        net = (
+            total_income
+            + total_receivable_received
+            - total_expense
+            - total_investment
+            - total_liability_paid
+        )
 
         return {
             "date": target_date,
             "total_expense": total_expense,
             "expenses_by_category": expenses_by_category,
             "total_income": total_income,
+            "total_receivable_received": total_receivable_received,
             "total_investment": total_investment,
             "total_liability_paid": total_liability_paid,
             "net": net,
@@ -202,13 +218,39 @@ class DashboardService:
             total_liability_principal - total_liability_paid
         )  # Simplified
 
+        # Outstanding Receivable
+        total_receiv_owed = (
+            await self.db.execute(select(func.sum(Receivable.total_owed)))
+        ).scalar() or 0
+        total_receiv_received = (
+            await self.db.execute(select(func.sum(Receivable.amount_received)))
+        ).scalar() or 0
+        total_outstanding_receivable = total_receiv_owed - total_receiv_received
+
         # Net Worth
-        # Assets = Investments + (Income - Expense - LiabilityPaid)
-        # Liabilities = Outstanding Liability
+        # Assets = Investments + CashOnHand + Outstanding Receivable
+        # Cash on hand = (Income + ReceivablesReceived) - (Expense + LiabilityPaid + Investment + ReceivablesCreated)
+        # Wait, ReceivablesCreated is just potential cash.
+        # Actually, Money Paid for shared expense = Expense (your share) + ReceivablesCreated
+        # So Cash Balance = Total Income - Total Expense (including full paid) - Total Investments - Total Liability Paid
+        # But we only store your share in expenses.
+        # So Cash Balance = Total Income - Your Expense - Total Investments - Total Liability Paid - Total Receivables Created (since that money is out)
+        # Then when someone pays back: Cash Balance increases.
+
         cash_on_hand = (
-            total_income - total_expense - total_liability_paid - total_investments
+            total_income
+            + total_receiv_received
+            - total_expense
+            - total_liability_paid
+            - total_investments
+            - total_receiv_owed
         )
-        net_worth = cash_on_hand + total_investments - total_outstanding_liability
+        net_worth = (
+            cash_on_hand
+            + total_investments
+            + total_outstanding_receivable
+            - total_outstanding_liability
+        )
 
         # Monthly Trends (Last 12 months)
         # We need to group by year-month.
@@ -236,6 +278,7 @@ class DashboardService:
             "total_investments": total_investments,
             "total_liability_paid": total_liability_paid,
             "total_outstanding_liability": total_outstanding_liability,
+            "total_outstanding_receivable": total_outstanding_receivable,
             "net_worth": net_worth,
             "expense_trend": expense_trend,
             "monthly_trend": [
@@ -260,14 +303,30 @@ class DashboardService:
             await self.db.execute(select(func.sum(LiabilityPayment.amount)))
         ).scalar() or 0
 
-        cash_in = total_income
-        cash_out = total_expense + total_investment + total_liability_paid
+        total_receiv_received = (
+            await self.db.execute(select(func.sum(Receivable.amount_received)))
+        ).scalar() or 0
+        total_receiv_owed = (
+            await self.db.execute(select(func.sum(Receivable.total_owed)))
+        ).scalar() or 0
+
+        cash_in = total_income + total_receiv_received
+        cash_out = (
+            total_expense + total_investment + total_liability_paid + total_receiv_owed
+        )
         net_cash_flow = cash_in - cash_out
 
         return {
             "cash_in": cash_in,
+            "total_income": total_income,
+            "receivables_received": total_receiv_received,
             "cash_out": cash_out,
+            "total_expense": total_expense,
+            "total_investment": total_investment,
+            "total_liability_paid": total_liability_paid,
+            "receivables_created": total_receiv_owed,
             "net_cash_flow": net_cash_flow,
+            "outstanding_receivable": total_receiv_owed - total_receiv_received,
         }
 
     async def get_net_savings(

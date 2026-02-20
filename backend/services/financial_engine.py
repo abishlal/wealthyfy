@@ -9,6 +9,7 @@ from models.models import (
     Liability,
     LiabilityPayment,
     LookupValue,
+    Budget,
 )
 
 
@@ -429,3 +430,67 @@ class FinancialEngine:
             "outstanding_liability": outstanding_liability,
             "progress_percentage": progress_percentage,
         }
+
+    async def calculate_budget_vs_actual(
+        self, month: int, year: int
+    ) -> List[Dict[str, Any]]:
+        # Get all budgets for the month
+        budgets_query = (
+            select(
+                LookupValue.value.label("category"),
+                Budget.amount.label("budgeted_amount"),
+                Budget.category_id,
+            )
+            .join(LookupValue, Budget.category_id == LookupValue.id)
+            .where(Budget.month == month, Budget.year == year)
+        )
+        budgets_result = await self.db.execute(budgets_query)
+        budgets_data = {row.category_id: row for row in budgets_result}
+
+        # Get actual expenses for the month
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = date(year, month + 1, 1) - timedelta(days=1)
+
+        actuals_query = (
+            select(
+                Expense.category_id,
+                func.sum(Expense.amount).label("actual_amount"),
+            )
+            .where(Expense.purchase_date.between(start_date, end_date))
+            .group_by(Expense.category_id)
+        )
+        actuals_result = await self.db.execute(actuals_query)
+        actuals_data = {
+            row.category_id: float(row.actual_amount) for row in actuals_result
+        }
+
+        # Combine data
+        categories_query = select(LookupValue).where(
+            LookupValue.type == "expense_category"
+        )
+        categories_result = await self.db.execute(categories_query)
+        all_categories = categories_result.scalars().all()
+
+        combined = []
+        for cat in all_categories:
+            budget_row = budgets_data.get(cat.id)
+            budgeted = float(budget_row.budgeted_amount) if budget_row else 0.0
+            actual = actuals_data.get(cat.id, 0.0)
+
+            if budgeted > 0 or actual > 0:
+                combined.append(
+                    {
+                        "category": cat.value,
+                        "budgeted": budgeted,
+                        "actual": actual,
+                        "remaining": budgeted - actual,
+                        "percent_used": (
+                            (actual / budgeted * 100) if budgeted > 0 else 0.0
+                        ),
+                    }
+                )
+
+        return sorted(combined, key=lambda x: x["actual"], reverse=True)

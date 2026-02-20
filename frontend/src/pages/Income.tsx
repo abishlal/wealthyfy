@@ -125,57 +125,59 @@ const IncomePage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Income</h2>
-                <div className="flex gap-2">
+                <div className="flex w-full sm:w-auto gap-2">
                     <button
                         onClick={() => window.open(`${api.defaults.baseURL}/income/export`, '_blank')}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Download size={20} /> Export CSV
+                        <Download size={18} /> <span className="hidden xs:inline">Export</span>
                     </button>
                     <button
                         onClick={openAddModal}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                        className="flex-1 sm:flex-none bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium"
                     >
-                        <Plus size={20} /> Add Income
+                        <Plus size={18} /> Add
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="bg-white shadow-md rounded-lg overflow-hidden overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {incomes.map((income) => (
-                            <tr key={income.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{income.date}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {incomeSourceMap[income.income_source_id] || 'Unknown'}
+                            <tr key={income.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{income.date}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {incomeSourceMap[income.income_source_id] || 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{income.description}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {accountMap[income.account_id] || 'Unknown'}
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-[150px]">{income.description}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {accountMap[income.account_id] || 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">₹{income.amount}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button onClick={() => openEditModal(income)} className="text-indigo-600 hover:text-indigo-900 mr-4"><Edit size={16} /></button>
-                                    <button onClick={() => handleDelete(income.id)} className="text-red-600 hover:text-red-900"><Trash size={16} /></button>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-green-600 font-bold">₹{income.amount}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div className="flex justify-end gap-3">
+                                        <button onClick={() => openEditModal(income)} className="text-indigo-600 hover:text-indigo-900"><Edit size={16} /></button>
+                                        <button onClick={() => handleDelete(income.id)} className="text-red-600 hover:text-red-900"><Trash size={16} /></button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
                         {incomes.length === 0 && !loading && (
                             <tr>
-                                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">No income records found.</td>
+                                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No records found.</td>
                             </tr>
                         )}
                     </tbody>

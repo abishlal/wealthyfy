@@ -133,3 +133,37 @@ class Investment(Base):
 
     investment_type = relationship("LookupValue", foreign_keys=[investment_type_id])
     institution = relationship("LookupValue", foreign_keys=[institution_id])
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    category_id = Column(
+        UUID(as_uuid=True), ForeignKey("lookup_values.id"), nullable=False
+    )
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    month = Column(Integer, nullable=False)  # 1-12
+    year = Column(Integer, nullable=False)
+
+    category = relationship("LookupValue", foreign_keys=[category_id])
+
+
+class Receivable(Base):
+    __tablename__ = "receivables"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    date = Column(Date, nullable=False, index=True)
+
+    person_name = Column(String, nullable=False)
+    total_owed = Column(DECIMAL(10, 2), nullable=False)
+    amount_received = Column(DECIMAL(10, 2), default=0)
+
+    status = Column(String, default="pending")  # pending, partial, settled
+
+    # Reference to the shared expense that created this receivable
+    reference_type = Column(String, nullable=True)  # e.g., "shared_expense"
+    reference_id = Column(UUID(as_uuid=True), nullable=True)
+
+    notes = Column(Text, nullable=True)

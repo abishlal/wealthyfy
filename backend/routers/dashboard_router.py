@@ -115,3 +115,13 @@ async def get_liability_trend(db: AsyncSession = Depends(get_db)):
 async def get_liability_summary(db: AsyncSession = Depends(get_db)):
     engine = FinancialEngine(db)
     return await engine.calculate_liability_summary()
+
+
+@router.get("/budget-vs-actual")
+async def get_budget_vs_actual(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2000, le=3000),
+    db: AsyncSession = Depends(get_db),
+):
+    engine = FinancialEngine(db)
+    return await engine.calculate_budget_vs_actual(month, year)

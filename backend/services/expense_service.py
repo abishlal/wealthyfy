@@ -11,8 +11,32 @@ class ExpenseService:
         self.db = db
 
     async def create_expense(self, expense: ExpenseCreate):
-        db_expense = Expense(**expense.dict())
+        expense_data = expense.dict()
+        is_shared = expense_data.pop("is_shared", False)
+        total_people = expense_data.pop("total_people", 1)
+        friend_shares = expense_data.pop("friend_shares", None)
+
+        # Create the expense record (user's share)
+        db_expense = Expense(**expense_data)
         self.db.add(db_expense)
+        await self.db.flush()  # Get ID before commit if needed
+
+        # If it's a shared expense, create receivables for friends
+        if is_shared and friend_shares:
+            from models.models import Receivable
+
+            for person, amount in friend_shares.items():
+                receivable = Receivable(
+                    date=db_expense.purchase_date,
+                    person_name=person,
+                    total_owed=amount,
+                    amount_received=0,
+                    status="pending",
+                    reference_type="shared_expense",
+                    reference_id=db_expense.id,
+                )
+                self.db.add(receivable)
+
         await self.db.commit()
         await self.db.refresh(db_expense)
         return db_expense
