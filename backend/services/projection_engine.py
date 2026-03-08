@@ -5,9 +5,9 @@ from services.financial_engine import FinancialEngine
 
 
 class ProjectionEngine:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
-        self.engine = FinancialEngine(db)
+        self.engine = FinancialEngine(db, user_id)
 
     async def get_net_worth_projection(
         self, years: int, annual_growth_rate: float = 7.0

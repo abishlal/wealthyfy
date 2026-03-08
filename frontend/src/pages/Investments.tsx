@@ -39,7 +39,10 @@ const InvestmentsPage: React.FC = () => {
             ]);
 
             // Sort investments by date desc
-            const sortedInvestments = invRes.data.sort((a: Investment, b: Investment) =>
+            const sortedInvestments = invRes.data.map((inv: any) => ({
+                ...inv,
+                amount: Number(inv.amount) || 0
+            })).sort((a: Investment, b: Investment) =>
                 new Date(b.date).getTime() - new Date(a.date).getTime()
             );
 
@@ -133,7 +136,7 @@ const InvestmentsPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-wider">Total Invested</p>
-                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.totalInvested.toLocaleString()}</h3>
+                            <h3 className="text-lg md:text-2xl font-black text-gray-900">₹{summary.totalInvested.toLocaleString('en-IN')}</h3>
                         </div>
                         <div className="hidden sm:block p-3 bg-purple-100 rounded-full text-purple-600">
                             <IndianRupee size={20} />
@@ -192,7 +195,7 @@ const InvestmentsPage: React.FC = () => {
                                             {typeMap[inv.investment_type_id] || 'Unknown'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">₹{(inv.amount || 0).toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">₹{(inv.amount || 0).toLocaleString('en-IN')}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{inv.notes}</td>
                                 </tr>
                             ))}

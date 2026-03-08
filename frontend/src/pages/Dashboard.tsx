@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
+import { useAuth } from 'react-oidc-context';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
 import { Wallet, TrendingUp, IndianRupee, CreditCard, Activity, Heart, Target, HandCoins } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import FriendBalances from '../components/FriendBalances';
+import ChartContainer from '../components/ChartContainer';
 
 interface DashboardSummary {
     total_income: number;
@@ -41,6 +44,7 @@ interface BudgetStatus {
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
 const Dashboard: React.FC = () => {
+    const auth = useAuth();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [cashFlow, setCashFlow] = useState<CashFlow | null>(null);
     const [investmentBreakdown, setInvestmentBreakdown] = useState<InvestmentBreakdown | null>(null);
@@ -51,6 +55,7 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
+
                 const [summaryRes, cashFlowRes, , investmentRes, budgetRes, savingsRes] = await Promise.all([
                     api.get('/dashboard/summary'),
                     api.get('/dashboard/cashflow'),
@@ -101,7 +106,9 @@ const Dashboard: React.FC = () => {
             {/* Header with Quick Insights */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Financial Pulse</h2>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                        Welcome back, {auth.user?.profile.preferred_username || auth.user?.profile.name || 'User'}!
+                    </h2>
                     <p className="text-gray-500 font-medium">Real-time status of your financial ecosystem.</p>
                 </div>
                 <div className="flex gap-4">
@@ -171,9 +178,9 @@ const Dashboard: React.FC = () => {
                             <h3 className="text-lg font-bold text-gray-800">Income vs. Spend Distribution</h3>
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Lifetime Analysis</span>
                         </div>
-                        <div className="h-[300px]">
-                            <ResponsiveContainer>
-                                <BarChart data={cashFlowData}>
+                        <ChartContainer height={300}>
+                            {(w, h) => (
+                                <BarChart data={cashFlowData} width={w} height={h}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} />
                                     <YAxis hide />
@@ -191,23 +198,23 @@ const Dashboard: React.FC = () => {
                                     <Bar dataKey="Debt" stackId="b" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
                                     <Bar dataKey="Owed by Others" stackId="b" fill="#ec4899" radius={[8, 8, 0, 0]} />
                                 </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                            )}
+                        </ChartContainer>
                     </div>
 
                     <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
                         <h3 className="text-lg font-bold text-gray-800 mb-6">Monthly Expense Trajectory</h3>
-                        <div className="h-[300px]">
-                            <ResponsiveContainer>
-                                <LineChart data={summary.expense_trend}>
+                        <ChartContainer height={300}>
+                            {(w, h) => (
+                                <LineChart data={summary.expense_trend} width={w} height={h}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="month" axisLine={false} tickLine={false} />
                                     <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
                                     <Tooltip formatter={(val: any) => `₹${val.toLocaleString()}`} />
                                     <Line type="monotone" dataKey="amount" stroke="#4f46e5" strokeWidth={4} dot={{ r: 6, fill: '#4f46e5' }} activeDot={{ r: 8 }} />
                                 </LineChart>
-                            </ResponsiveContainer>
-                        </div>
+                            )}
+                        </ChartContainer>
                     </div>
                 </div>
 
@@ -245,9 +252,9 @@ const Dashboard: React.FC = () => {
                     {/* Investment Breakdown */}
                     <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
                         <h3 className="text-lg font-bold text-gray-800 mb-6">Investment Mix</h3>
-                        <div className="h-[250px]">
-                            <ResponsiveContainer>
-                                <PieChart>
+                        <ChartContainer height={250}>
+                            {(w, h) => (
+                                <PieChart width={w} height={h}>
                                     <Pie
                                         data={investmentData}
                                         innerRadius={60}
@@ -262,8 +269,8 @@ const Dashboard: React.FC = () => {
                                     <Tooltip formatter={(val: any) => `₹${val.toLocaleString()}`} />
                                     <Legend />
                                 </PieChart>
-                            </ResponsiveContainer>
-                        </div>
+                            )}
+                        </ChartContainer>
                     </div>
 
                     {/* Quick Action / Planning Insight */}
@@ -277,6 +284,9 @@ const Dashboard: React.FC = () => {
                             <Activity className="w-24 h-24" />
                         </div>
                     </div>
+
+                    {/* Friend Balances */}
+                    <FriendBalances />
                 </div>
             </div>
         </div>
@@ -304,7 +314,7 @@ const MetricCard = ({ title, amount, icon, color, trend }: { title: string, amou
                 <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${text} ${bgContent} px-2 py-0.5 rounded-full whitespace-nowrap`}>{trend}</span>
             </div>
             <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest mb-1 truncate">{title}</p>
-            <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight">₹{Math.abs(amount).toLocaleString()}</p>
+            <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight">{amount < 0 ? '-' : ''}₹{Math.abs(amount).toLocaleString()}</p>
         </div>
     );
 };

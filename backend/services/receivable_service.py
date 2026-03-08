@@ -7,11 +7,12 @@ from uuid import UUID
 
 
 class ReceivableService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
+        self.user_id = user_id
 
     async def create_receivable(self, receivable: ReceivableCreate):
-        db_receivable = Receivable(**receivable.dict())
+        db_receivable = Receivable(**receivable.dict(), user_id=self.user_id)
         self.db.add(db_receivable)
         await self.db.commit()
         await self.db.refresh(db_receivable)
@@ -20,6 +21,7 @@ class ReceivableService:
     async def get_receivables(self, skip: int = 0, limit: int = 100):
         result = await self.db.execute(
             select(Receivable)
+            .filter(Receivable.user_id == self.user_id)
             .order_by(Receivable.date.desc())
             .offset(skip)
             .limit(limit)
@@ -28,7 +30,9 @@ class ReceivableService:
 
     async def get_receivable(self, receivable_id: UUID):
         result = await self.db.execute(
-            select(Receivable).filter(Receivable.id == receivable_id)
+            select(Receivable).filter(
+                Receivable.id == receivable_id, Receivable.user_id == self.user_id
+            )
         )
         return result.scalars().first()
 
@@ -53,7 +57,7 @@ class ReceivableService:
 
         query = (
             update(Receivable)
-            .where(Receivable.id == receivable_id)
+            .where(Receivable.id == receivable_id, Receivable.user_id == self.user_id)
             .values(**update_data)
         )
         await self.db.execute(query)
@@ -61,6 +65,8 @@ class ReceivableService:
         return await self.get_receivable(receivable_id)
 
     async def delete_receivable(self, receivable_id: UUID):
-        query = delete(Receivable).where(Receivable.id == receivable_id)
+        query = delete(Receivable).where(
+            Receivable.id == receivable_id, Receivable.user_id == self.user_id
+        )
         await self.db.execute(query)
         await self.db.commit()

@@ -12,6 +12,7 @@ from routers import (
     budget,
     projections,
     receivables,
+    friends,
 )
 
 app = FastAPI(title="Personal Finance Tracker")
@@ -61,6 +62,7 @@ app.include_router(settings_router.router)
 app.include_router(budget.router)
 app.include_router(projections.router)
 app.include_router(receivables.router)
+app.include_router(friends.router)
 
 
 @app.get("/")

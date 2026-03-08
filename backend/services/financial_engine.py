@@ -14,8 +14,9 @@ from models.models import (
 
 
 class FinancialEngine:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
+        self.user_id = user_id
 
     async def _get_total(
         self,
@@ -26,6 +27,12 @@ class FinancialEngine:
         end_date: Optional[date] = None,
     ) -> float:
         query = select(func.sum(column))
+        if model == LiabilityPayment:
+            query = query.join(
+                Liability, LiabilityPayment.liability_id == Liability.id
+            ).where(Liability.user_id == self.user_id)
+        else:
+            query = query.where(model.user_id == self.user_id)
         if start_date and end_date:
             query = query.where(date_column.between(start_date, end_date))
         result = await self.db.execute(query)
@@ -111,9 +118,14 @@ class FinancialEngine:
         self, start_date: Optional[date] = None, end_date: Optional[date] = None
     ) -> List[Dict[str, Any]]:
         async def get_daily_totals(model, amount_col, date_col):
-            query = select(
-                date_col.label("date"), func.sum(amount_col).label("total")
-            ).group_by(date_col)
+            query = select(date_col.label("date"), func.sum(amount_col).label("total"))
+            if model == LiabilityPayment:
+                query = query.join(
+                    Liability, LiabilityPayment.liability_id == Liability.id
+                ).where(Liability.user_id == self.user_id)
+            else:
+                query = query.where(model.user_id == self.user_id)
+            query = query.group_by(date_col)
             if start_date and end_date:
                 query = query.where(date_col.between(start_date, end_date))
             result = await self.db.execute(query)
@@ -164,7 +176,14 @@ class FinancialEngine:
             query = select(
                 func.date_trunc("week", date_col).label("week_start"),
                 func.sum(amount_col).label("total"),
-            ).group_by(text("week_start"))
+            )
+            if model == LiabilityPayment:
+                query = query.join(
+                    Liability, LiabilityPayment.liability_id == Liability.id
+                ).where(Liability.user_id == self.user_id)
+            else:
+                query = query.where(model.user_id == self.user_id)
+            query = query.group_by(text("week_start"))
             if start_date and end_date:
                 query = query.where(date_col.between(start_date, end_date))
             result = await self.db.execute(query)
@@ -217,7 +236,14 @@ class FinancialEngine:
             query = select(
                 func.to_char(date_col, "YYYY-MM").label("month"),
                 func.sum(amount_col).label("total"),
-            ).group_by(text("month"))
+            )
+            if model == LiabilityPayment:
+                query = query.join(
+                    Liability, LiabilityPayment.liability_id == Liability.id
+                ).where(Liability.user_id == self.user_id)
+            else:
+                query = query.where(model.user_id == self.user_id)
+            query = query.group_by(text("month"))
             if start_date and end_date:
                 query = query.where(date_col.between(start_date, end_date))
             result = await self.db.execute(query)
@@ -267,7 +293,14 @@ class FinancialEngine:
             query = select(
                 func.extract("year", date_col).label("year_val"),
                 func.sum(amount_col).label("total"),
-            ).group_by(text("year_val"))
+            )
+            if model == LiabilityPayment:
+                query = query.join(
+                    Liability, LiabilityPayment.liability_id == Liability.id
+                ).where(Liability.user_id == self.user_id)
+            else:
+                query = query.where(model.user_id == self.user_id)
+            query = query.group_by(text("year_val"))
             result = await self.db.execute(query)
             return {int(row.year_val): float(row.total) for row in result}
 
@@ -319,6 +352,7 @@ class FinancialEngine:
                 func.sum(Expense.amount).label("total"),
             )
             .join(LookupValue, Expense.category_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .group_by(LookupValue.value)
         )
         if start_date and end_date:
@@ -349,7 +383,7 @@ class FinancialEngine:
                 func.sum(Expense.amount).label("amount"),
             )
             .join(LookupValue, Expense.category_id == LookupValue.id)
-            .where(LookupValue.value == category)
+            .where(LookupValue.value == category, Expense.user_id == self.user_id)
             .group_by(text("month"))
             .order_by(text("month"))
         )
@@ -363,6 +397,7 @@ class FinancialEngine:
                 func.to_char(Investment.date, "YYYY-MM").label("month"),
                 func.sum(Investment.amount).label("amount"),
             )
+            .where(Investment.user_id == self.user_id)
             .group_by(text("month"))
             .order_by(text("month"))
         )
@@ -382,7 +417,9 @@ class FinancialEngine:
         return data
 
     async def calculate_liability_trend(self) -> List[Dict[str, Any]]:
-        total_initial_liability_query = select(func.sum(Liability.original_amount))
+        total_initial_liability_query = select(
+            func.sum(Liability.original_amount)
+        ).where(Liability.user_id == self.user_id)
         total_initial_liability = float(
             (await self.db.execute(total_initial_liability_query)).scalar() or 0
         )
@@ -392,6 +429,8 @@ class FinancialEngine:
                 func.to_char(LiabilityPayment.payment_date, "YYYY-MM").label("month"),
                 func.sum(LiabilityPayment.amount).label("paid"),
             )
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
             .group_by(text("month"))
             .order_by(text("month"))
         )
@@ -411,8 +450,16 @@ class FinancialEngine:
         return data
 
     async def calculate_liability_summary(self) -> Dict[str, Any]:
-        total_liability_query = select(func.sum(Liability.original_amount))
-        total_paid_query = select(func.sum(LiabilityPayment.amount))
+        total_liability_query = select(
+            func.sum(
+                func.coalesce(Liability.total_payable_amount, Liability.original_amount)
+            )
+        ).where(Liability.user_id == self.user_id)
+        total_paid_query = (
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+        )
 
         total_liability = float(
             (await self.db.execute(total_liability_query)).scalar() or 0
@@ -442,7 +489,11 @@ class FinancialEngine:
                 Budget.category_id,
             )
             .join(LookupValue, Budget.category_id == LookupValue.id)
-            .where(Budget.month == month, Budget.year == year)
+            .where(
+                Budget.month == month,
+                Budget.year == year,
+                Budget.user_id == self.user_id,
+            )
         )
         budgets_result = await self.db.execute(budgets_query)
         budgets_data = {row.category_id: row for row in budgets_result}
@@ -459,7 +510,10 @@ class FinancialEngine:
                 Expense.category_id,
                 func.sum(Expense.amount).label("actual_amount"),
             )
-            .where(Expense.purchase_date.between(start_date, end_date))
+            .where(
+                Expense.user_id == self.user_id,
+                Expense.purchase_date.between(start_date, end_date),
+            )
             .group_by(Expense.category_id)
         )
         actuals_result = await self.db.execute(actuals_query)
@@ -469,7 +523,7 @@ class FinancialEngine:
 
         # Combine data
         categories_query = select(LookupValue).where(
-            LookupValue.type == "expense_category"
+            LookupValue.type == "expense_category", LookupValue.user_id == self.user_id
         )
         categories_result = await self.db.execute(categories_query)
         all_categories = categories_result.scalars().all()

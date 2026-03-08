@@ -9,18 +9,21 @@ from models.models import (
     LiabilityPayment,
     Investment,
     LookupValue,
-    Receivable,
+    FriendTransaction,
 )
 
 
 class DashboardService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
+        self.user_id = user_id
 
     async def get_daily_dashboard(self, target_date: date) -> Dict[str, Any]:
         # total_expense
         expense_result = await self.db.execute(
-            select(func.sum(Expense.amount)).where(Expense.purchase_date == target_date)
+            select(func.sum(Expense.amount))
+            .where(Expense.user_id == self.user_id)
+            .where(Expense.purchase_date == target_date)
         )
         total_expense = expense_result.scalar() or 0
 
@@ -28,6 +31,7 @@ class DashboardService:
         cat_result = await self.db.execute(
             select(LookupValue.value, func.sum(Expense.amount))
             .join(LookupValue, Expense.category_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .where(Expense.purchase_date == target_date)
             .group_by(LookupValue.value)
         )
@@ -35,29 +39,35 @@ class DashboardService:
 
         # total_income
         income_result = await self.db.execute(
-            select(func.sum(Income.amount)).where(Income.date == target_date)
+            select(func.sum(Income.amount))
+            .where(Income.user_id == self.user_id)
+            .where(Income.date == target_date)
         )
         total_income = income_result.scalar() or 0
 
         # total_investment
         investment_result = await self.db.execute(
-            select(func.sum(Investment.amount)).where(Investment.date == target_date)
+            select(func.sum(Investment.amount))
+            .where(Investment.user_id == self.user_id)
+            .where(Investment.date == target_date)
         )
         total_investment = investment_result.scalar() or 0
 
         # total_liability_paid
         liability_result = await self.db.execute(
-            select(func.sum(LiabilityPayment.amount)).where(
-                LiabilityPayment.payment_date == target_date
-            )
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+            .where(LiabilityPayment.payment_date == target_date)
         )
         total_liability_paid = liability_result.scalar() or 0
 
         # total_receivable_received
         receiv_res = await self.db.execute(
-            select(func.sum(Receivable.amount_received)).where(
-                Receivable.date == target_date
-            )
+            select(func.sum(FriendTransaction.amount))
+            .where(FriendTransaction.user_id == self.user_id)
+            .where(FriendTransaction.date == target_date)
+            .where(FriendTransaction.direction == "you_owe_friend")
         )
         total_receivable_received = receiv_res.scalar() or 0
 
@@ -86,9 +96,9 @@ class DashboardService:
     ) -> Dict[str, Any]:
         # total_expense
         expense_result = await self.db.execute(
-            select(func.sum(Expense.amount)).where(
-                Expense.purchase_date.between(start_date, end_date)
-            )
+            select(func.sum(Expense.amount))
+            .where(Expense.user_id == self.user_id)
+            .where(Expense.purchase_date.between(start_date, end_date))
         )
         total_expense = expense_result.scalar() or 0
 
@@ -96,6 +106,7 @@ class DashboardService:
         cat_result = await self.db.execute(
             select(LookupValue.value, func.sum(Expense.amount))
             .join(LookupValue, Expense.category_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .where(Expense.purchase_date.between(start_date, end_date))
             .group_by(LookupValue.value)
         )
@@ -103,25 +114,26 @@ class DashboardService:
 
         # total_income
         income_result = await self.db.execute(
-            select(func.sum(Income.amount)).where(
-                Income.date.between(start_date, end_date)
-            )
+            select(func.sum(Income.amount))
+            .where(Income.user_id == self.user_id)
+            .where(Income.date.between(start_date, end_date))
         )
         total_income = income_result.scalar() or 0
 
         # total_investment
         investment_result = await self.db.execute(
-            select(func.sum(Investment.amount)).where(
-                Investment.date.between(start_date, end_date)
-            )
+            select(func.sum(Investment.amount))
+            .where(Investment.user_id == self.user_id)
+            .where(Investment.date.between(start_date, end_date))
         )
         total_investment = investment_result.scalar() or 0
 
         # total_liability_paid
         liability_result = await self.db.execute(
-            select(func.sum(LiabilityPayment.amount)).where(
-                LiabilityPayment.payment_date.between(start_date, end_date)
-            )
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+            .where(LiabilityPayment.payment_date.between(start_date, end_date))
         )
         total_liability_paid = liability_result.scalar() or 0
 
@@ -148,27 +160,34 @@ class DashboardService:
 
         # total_income
         income_result = await self.db.execute(
-            select(func.sum(Income.amount)).where(filter_month(Income.date))
+            select(func.sum(Income.amount))
+            .where(Income.user_id == self.user_id)
+            .where(filter_month(Income.date))
         )
         total_income = income_result.scalar() or 0
 
         # total_expense
         expense_result = await self.db.execute(
-            select(func.sum(Expense.amount)).where(filter_month(Expense.purchase_date))
+            select(func.sum(Expense.amount))
+            .where(Expense.user_id == self.user_id)
+            .where(filter_month(Expense.purchase_date))
         )
         total_expense = expense_result.scalar() or 0
 
         # total_investment
         inv_result = await self.db.execute(
-            select(func.sum(Investment.amount)).where(filter_month(Investment.date))
+            select(func.sum(Investment.amount))
+            .where(Investment.user_id == self.user_id)
+            .where(filter_month(Investment.date))
         )
         total_investment = inv_result.scalar() or 0
 
         # total_liability_paid
         liability_result = await self.db.execute(
-            select(func.sum(LiabilityPayment.amount)).where(
-                filter_month(LiabilityPayment.payment_date)
-            )
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+            .where(filter_month(LiabilityPayment.payment_date))
         )
         total_liability_paid = liability_result.scalar() or 0
 
@@ -176,6 +195,7 @@ class DashboardService:
         cat_result = await self.db.execute(
             select(LookupValue.value, func.sum(Expense.amount))
             .join(LookupValue, Expense.category_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .where(filter_month(Expense.purchase_date))
             .group_by(LookupValue.value)
         )
@@ -198,52 +218,73 @@ class DashboardService:
     async def get_summary_dashboard(self) -> Dict[str, Any]:
         # Totals (Lifetime)
         total_income = (
-            await self.db.execute(select(func.sum(Income.amount)))
+            await self.db.execute(
+                select(func.sum(Income.amount)).where(Income.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_expense = (
-            await self.db.execute(select(func.sum(Expense.amount)))
+            await self.db.execute(
+                select(func.sum(Expense.amount)).where(Expense.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_investments = (
-            await self.db.execute(select(func.sum(Investment.amount)))
+            await self.db.execute(
+                select(func.sum(Investment.amount)).where(
+                    Investment.user_id == self.user_id
+                )
+            )
         ).scalar() or 0
         total_liability_paid = (
-            await self.db.execute(select(func.sum(LiabilityPayment.amount)))
+            await self.db.execute(
+                select(func.sum(LiabilityPayment.amount))
+                .join(Liability, LiabilityPayment.liability_id == Liability.id)
+                .where(Liability.user_id == self.user_id)
+            )
         ).scalar() or 0
 
         # Outstanding Liability
+        # Use total_payable_amount (principal + interest) if set, else fall back to original_amount
         total_liability_principal = (
-            await self.db.execute(select(func.sum(Liability.original_amount)))
+            await self.db.execute(
+                select(
+                    func.sum(
+                        func.coalesce(
+                            Liability.total_payable_amount, Liability.original_amount
+                        )
+                    )
+                ).where(Liability.user_id == self.user_id)
+            )
         ).scalar() or 0
-        total_outstanding_liability = (
-            total_liability_principal - total_liability_paid
-        )  # Simplified
+        total_outstanding_liability = total_liability_principal - total_liability_paid
 
         # Outstanding Receivable
         total_receiv_owed = (
-            await self.db.execute(select(func.sum(Receivable.total_owed)))
+            await self.db.execute(
+                select(func.sum(FriendTransaction.amount)).where(
+                    FriendTransaction.user_id == self.user_id,
+                    FriendTransaction.direction == "friend_owes_you",
+                )
+            )
         ).scalar() or 0
         total_receiv_received = (
-            await self.db.execute(select(func.sum(Receivable.amount_received)))
+            await self.db.execute(
+                select(func.sum(FriendTransaction.amount)).where(
+                    FriendTransaction.user_id == self.user_id,
+                    FriendTransaction.direction == "you_owe_friend",
+                )
+            )
         ).scalar() or 0
         total_outstanding_receivable = total_receiv_owed - total_receiv_received
 
-        # Net Worth
-        # Assets = Investments + CashOnHand + Outstanding Receivable
-        # Cash on hand = (Income + ReceivablesReceived) - (Expense + LiabilityPaid + Investment + ReceivablesCreated)
-        # Wait, ReceivablesCreated is just potential cash.
-        # Actually, Money Paid for shared expense = Expense (your share) + ReceivablesCreated
-        # So Cash Balance = Total Income - Total Expense (including full paid) - Total Investments - Total Liability Paid
-        # But we only store your share in expenses.
-        # So Cash Balance = Total Income - Your Expense - Total Investments - Total Liability Paid - Total Receivables Created (since that money is out)
-        # Then when someone pays back: Cash Balance increases.
-
+        # Liquid Cash = actual money in hand
+        # Income earned + friend repayments received - personal expenses - EMI paid - investments
+        # Note: receivables_created is NOT subtracted — it is tracked separately as outstanding_receivable
         cash_on_hand = (
             total_income
             + total_receiv_received
             - total_expense
             - total_liability_paid
             - total_investments
-            - total_receiv_owed
         )
         net_worth = (
             cash_on_hand
@@ -263,7 +304,7 @@ class DashboardService:
                 func.date_trunc("month", Expense.purchase_date).label("month"),
                 func.sum(Expense.amount),
             )
-            .where(Expense.purchase_date >= start_date)
+            .where(Expense.user_id == self.user_id, Expense.purchase_date >= start_date)
             .group_by("month")
             .order_by("month")
         )
@@ -291,29 +332,51 @@ class DashboardService:
     async def get_cashflow_summary(self) -> Dict[str, Any]:
         """Calculate cash flow summary (lifetime totals)"""
         total_income = (
-            await self.db.execute(select(func.sum(Income.amount)))
+            await self.db.execute(
+                select(func.sum(Income.amount)).where(Income.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_expense = (
-            await self.db.execute(select(func.sum(Expense.amount)))
+            await self.db.execute(
+                select(func.sum(Expense.amount)).where(Expense.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_investment = (
-            await self.db.execute(select(func.sum(Investment.amount)))
+            await self.db.execute(
+                select(func.sum(Investment.amount)).where(
+                    Investment.user_id == self.user_id
+                )
+            )
         ).scalar() or 0
         total_liability_paid = (
-            await self.db.execute(select(func.sum(LiabilityPayment.amount)))
+            await self.db.execute(
+                select(func.sum(LiabilityPayment.amount))
+                .join(Liability, LiabilityPayment.liability_id == Liability.id)
+                .where(Liability.user_id == self.user_id)
+            )
         ).scalar() or 0
 
         total_receiv_received = (
-            await self.db.execute(select(func.sum(Receivable.amount_received)))
+            await self.db.execute(
+                select(func.sum(FriendTransaction.amount)).where(
+                    FriendTransaction.user_id == self.user_id,
+                    FriendTransaction.direction == "you_owe_friend",
+                )
+            )
         ).scalar() or 0
         total_receiv_owed = (
-            await self.db.execute(select(func.sum(Receivable.total_owed)))
+            await self.db.execute(
+                select(func.sum(FriendTransaction.amount)).where(
+                    FriendTransaction.user_id == self.user_id,
+                    FriendTransaction.direction == "friend_owes_you",
+                )
+            )
         ).scalar() or 0
 
         cash_in = total_income + total_receiv_received
-        cash_out = (
-            total_expense + total_investment + total_liability_paid + total_receiv_owed
-        )
+        # receivables_created (total_owed) is NOT a cash outflow — money friends owe you
+        # is tracked separately as outstanding_receivable, not deducted from liquid cash
+        cash_out = total_expense + total_investment + total_liability_paid
         net_cash_flow = cash_in - cash_out
 
         return {
@@ -334,10 +397,20 @@ class DashboardService:
     ) -> Dict[str, Any]:
         """Calculate net savings for a date range, or lifetime if no dates provided"""
         # Build queries with optional date filtering
-        income_query = select(func.sum(Income.amount))
-        expense_query = select(func.sum(Expense.amount))
-        investment_query = select(func.sum(Investment.amount))
-        liability_query = select(func.sum(LiabilityPayment.amount))
+        income_query = select(func.sum(Income.amount)).where(
+            Income.user_id == self.user_id
+        )
+        expense_query = select(func.sum(Expense.amount)).where(
+            Expense.user_id == self.user_id
+        )
+        investment_query = select(func.sum(Investment.amount)).where(
+            Investment.user_id == self.user_id
+        )
+        liability_query = (
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+        )
 
         if start_date and end_date:
             income_query = income_query.where(Income.date.between(start_date, end_date))
@@ -373,19 +446,40 @@ class DashboardService:
     async def get_net_worth(self) -> Dict[str, Any]:
         """Calculate net worth: Cash Balance + Investments - Outstanding Liability"""
         total_income = (
-            await self.db.execute(select(func.sum(Income.amount)))
+            await self.db.execute(
+                select(func.sum(Income.amount)).where(Income.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_expense = (
-            await self.db.execute(select(func.sum(Expense.amount)))
+            await self.db.execute(
+                select(func.sum(Expense.amount)).where(Expense.user_id == self.user_id)
+            )
         ).scalar() or 0
         total_investments = (
-            await self.db.execute(select(func.sum(Investment.amount)))
+            await self.db.execute(
+                select(func.sum(Investment.amount)).where(
+                    Investment.user_id == self.user_id
+                )
+            )
         ).scalar() or 0
         total_liability_paid = (
-            await self.db.execute(select(func.sum(LiabilityPayment.amount)))
+            await self.db.execute(
+                select(func.sum(LiabilityPayment.amount))
+                .join(Liability, LiabilityPayment.liability_id == Liability.id)
+                .where(Liability.user_id == self.user_id)
+            )
         ).scalar() or 0
+        # Use total_payable_amount (principal + interest) if set, else fall back to original_amount
         total_liability_principal = (
-            await self.db.execute(select(func.sum(Liability.original_amount)))
+            await self.db.execute(
+                select(
+                    func.sum(
+                        func.coalesce(
+                            Liability.total_payable_amount, Liability.original_amount
+                        )
+                    )
+                ).where(Liability.user_id == self.user_id)
+            )
         ).scalar() or 0
 
         # Cash balance = Income - Expense - Liability Paid - Investment
@@ -393,7 +487,7 @@ class DashboardService:
             total_income - total_expense - total_liability_paid - total_investments
         )
 
-        # Outstanding liability
+        # Outstanding liability (based on total repayable amount, not just principal)
         outstanding_liability = total_liability_principal - total_liability_paid
 
         # Net worth = Cash + Investments - Outstanding Liability
@@ -419,6 +513,7 @@ class DashboardService:
         cat_result = await self.db.execute(
             select(LookupValue.value, func.sum(Expense.amount))
             .join(LookupValue, Expense.category_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .where(filter_month(Expense.purchase_date))
             .group_by(LookupValue.value)
         )
@@ -447,7 +542,17 @@ class DashboardService:
         query = select(group_func.label(date_label), func.sum(model.amount))
 
         if start_date and end_date:
-            query = query.where(date_column.between(start_date, end_date))
+            query = query.where(
+                model.user_id == self.user_id, date_column.between(start_date, end_date)
+            )
+        else:
+            if model == LiabilityPayment:
+                query = query.join(
+                    Liability, LiabilityPayment.liability_id == Liability.id
+                )
+                query = query.where(Liability.user_id == self.user_id)
+            else:
+                query = query.where(model.user_id == self.user_id)
 
         query = query.group_by(date_label).order_by(date_label)
 
@@ -523,11 +628,13 @@ class DashboardService:
         exp_q = (
             select(LookupValue.value, func.sum(Expense.amount))
             .join(LookupValue, Expense.account_id == LookupValue.id)
+            .where(Expense.user_id == self.user_id)
             .group_by(LookupValue.value)
         )
         inc_q = (
             select(LookupValue.value, func.sum(Income.amount))
             .join(LookupValue, Income.account_id == LookupValue.id)
+            .where(Income.user_id == self.user_id)
             .group_by(LookupValue.value)
         )
 
@@ -562,6 +669,7 @@ class DashboardService:
         query = (
             select(LookupValue.value, func.sum(Investment.amount))
             .join(LookupValue, Investment.investment_type_id == LookupValue.id)
+            .where(Investment.user_id == self.user_id)
             .group_by(LookupValue.value)
         )
         if start_date and end_date:
@@ -575,8 +683,14 @@ class DashboardService:
     ) -> Dict[str, Any]:
         """Get comprehensive liability summary (lifetime or range)"""
         # Build queries
-        liability_q = select(func.sum(Liability.original_amount))
-        payment_q = select(func.sum(LiabilityPayment.amount))
+        liability_q = select(func.sum(Liability.original_amount)).where(
+            Liability.user_id == self.user_id
+        )
+        payment_q = (
+            select(func.sum(LiabilityPayment.amount))
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(Liability.user_id == self.user_id)
+        )
 
         if start_date and end_date:
             # For liability summary, date filtering is tricky because loans exist over time.
@@ -596,14 +710,19 @@ class DashboardService:
         progress_percent = float(progress_percent)
 
         liabilities_result = await self.db.execute(
-            select(Liability.id, Liability.liability_name, Liability.original_amount)
+            select(
+                Liability.id, Liability.liability_name, Liability.original_amount
+            ).where(Liability.user_id == self.user_id)
         )
         liabilities = liabilities_result.all()
 
         liability_details = []
         for liability_id, loan_name, original_amount in liabilities:
-            paid_q = select(func.sum(LiabilityPayment.amount)).where(
-                LiabilityPayment.liability_id == liability_id
+            paid_q = (
+                select(func.sum(LiabilityPayment.amount))
+                .join(Liability, LiabilityPayment.liability_id == Liability.id)
+                .where(Liability.user_id == self.user_id)
+                .where(LiabilityPayment.liability_id == liability_id)
             )
             if start_date and end_date:
                 paid_q = paid_q.where(

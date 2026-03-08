@@ -21,6 +21,7 @@ class LookupValue(Base):
     __tablename__ = "lookup_values"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     type = Column(String, nullable=False, index=True)
     value = Column(String, nullable=False)
     display_order = Column(Integer, default=0)
@@ -35,6 +36,7 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     purchase_date = Column(Date, nullable=False, index=True)
     item = Column(String, nullable=False)
@@ -57,6 +59,7 @@ class Income(Base):
     __tablename__ = "income"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     date = Column(Date, nullable=False, index=True)
 
@@ -79,6 +82,7 @@ class Liability(Base):
     __tablename__ = "liabilities"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
 
     liabilities_type_id = Column(
         UUID(as_uuid=True), ForeignKey("lookup_values.id"), nullable=False
@@ -91,8 +95,12 @@ class Liability(Base):
     original_amount = Column(DECIMAL(10, 2), nullable=False)
     interest_rate = Column(Float, nullable=False)
     emi_amount = Column(DECIMAL(10, 2), nullable=False)
+    total_payable_amount = Column(
+        DECIMAL(10, 2), nullable=True
+    )  # manual or auto: emi * term_months
     start_date = Column(Date, nullable=False)
     term_months = Column(Integer, nullable=False)
+    due_day = Column(Integer, nullable=True)
 
     liabilities_type = relationship("LookupValue", foreign_keys=[liabilities_type_id])
     lender = relationship("LookupValue", foreign_keys=[lender_id])
@@ -119,6 +127,7 @@ class Investment(Base):
     __tablename__ = "investments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     date = Column(Date, nullable=False, index=True)
 
     investment_type_id = Column(
@@ -139,6 +148,7 @@ class Budget(Base):
     __tablename__ = "budgets"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     category_id = Column(
         UUID(as_uuid=True), ForeignKey("lookup_values.id"), nullable=False
     )
@@ -153,6 +163,7 @@ class Receivable(Base):
     __tablename__ = "receivables"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     date = Column(Date, nullable=False, index=True)
 
@@ -167,3 +178,34 @@ class Receivable(Base):
     reference_id = Column(UUID(as_uuid=True), nullable=True)
 
     notes = Column(Text, nullable=True)
+
+
+class Friend(Base):
+    __tablename__ = "friends"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class FriendTransaction(Base):
+    __tablename__ = "friend_transactions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=False, index=True)
+    friend_id = Column(UUID(as_uuid=True), ForeignKey("friends.id"), nullable=False)
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    direction = Column(String, nullable=False)  # friend_owes_you, you_owe_friend
+    reference_type = Column(String, nullable=True)  # expense, manual, settlement
+    reference_id = Column(UUID(as_uuid=True), nullable=True)
+    description = Column(String, nullable=True)
+    date = Column(Date, nullable=False, index=True)
+    is_settlement = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    friend = relationship("Friend")

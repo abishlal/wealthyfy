@@ -8,6 +8,7 @@ from database import get_db
 from schemas.schemas import Investment, InvestmentCreate
 from services.investment_service import InvestmentService
 from services.export_service import ExportService
+from auth import get_current_user, User
 
 router = APIRouter(
     prefix="/investments",
@@ -17,9 +18,11 @@ router = APIRouter(
 
 
 @router.get("/export")
-async def export_investments(db: AsyncSession = Depends(get_db)):
+async def export_investments(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     """Export all investments to CSV"""
-    service = InvestmentService(db)
+    service = InvestmentService(db, current_user.id)
     investments = await service.get_investments(limit=10000)
 
     fields = [
@@ -40,15 +43,20 @@ async def export_investments(db: AsyncSession = Depends(get_db)):
 
 @router.post("/", response_model=Investment, status_code=status.HTTP_201_CREATED)
 async def create_investment(
-    investment: InvestmentCreate, db: AsyncSession = Depends(get_db)
+    investment: InvestmentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    service = InvestmentService(db)
+    service = InvestmentService(db, current_user.id)
     return await service.create_investment(investment)
 
 
 @router.get("/", response_model=List[Investment])
 async def read_investments(
-    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    service = InvestmentService(db)
+    service = InvestmentService(db, current_user.id)
     return await service.get_investments(skip, limit)

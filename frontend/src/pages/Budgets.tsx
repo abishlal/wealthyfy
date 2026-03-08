@@ -30,7 +30,7 @@ const Budgets: React.FC = () => {
         setLoading(true);
         try {
             const [categoriesRes, budgetsRes] = await Promise.all([
-                api.get('/settings/lookup/expense_category'),
+                api.get('/settings/expense_category'),
                 api.get(`/dashboard/v2/budget-vs-actual?month=${selectedMonth}&year=${selectedYear}`)
             ]);
             setCategories(categoriesRes.data);

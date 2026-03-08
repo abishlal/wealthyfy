@@ -7,18 +7,19 @@ from uuid import UUID
 
 
 class BudgetService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
+        self.user_id = user_id
 
     async def create_budget(self, budget: BudgetCreate):
-        db_budget = Budget(**budget.dict())
+        db_budget = Budget(**budget.dict(), user_id=self.user_id)
         self.db.add(db_budget)
         await self.db.commit()
         await self.db.refresh(db_budget)
         return db_budget
 
     async def get_budgets(self, month: int = None, year: int = None):
-        query = select(Budget)
+        query = select(Budget).filter(Budget.user_id == self.user_id)
         if month:
             query = query.where(Budget.month == month)
         if year:
@@ -27,12 +28,18 @@ class BudgetService:
         return result.scalars().all()
 
     async def get_budget(self, budget_id: UUID):
-        result = await self.db.execute(select(Budget).filter(Budget.id == budget_id))
+        result = await self.db.execute(
+            select(Budget).filter(
+                Budget.id == budget_id, Budget.user_id == self.user_id
+            )
+        )
         return result.scalars().first()
 
     async def update_budget(self, budget_id: UUID, budget_data: BudgetCreate):
         query = (
-            update(Budget).where(Budget.id == budget_id).values(**budget_data.dict())
+            update(Budget)
+            .where(Budget.id == budget_id, Budget.user_id == self.user_id)
+            .values(**budget_data.dict())
         )
         query = query.execution_options(synchronize_session="fetch")
         await self.db.execute(query)
@@ -40,6 +47,8 @@ class BudgetService:
         return await self.get_budget(budget_id)
 
     async def delete_budget(self, budget_id: UUID):
-        query = delete(Budget).where(Budget.id == budget_id)
+        query = delete(Budget).where(
+            Budget.id == budget_id, Budget.user_id == self.user_id
+        )
         await self.db.execute(query)
         await self.db.commit()

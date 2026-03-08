@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
+import { useAuth } from 'react-oidc-context';
 
 const MainLayout: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const auth = useAuth();
 
     const navLinks = [
         { to: "/", label: "Dashboard" },
@@ -25,11 +27,11 @@ const MainLayout: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center">
-                            <span className="text-xl font-black text-indigo-600 tracking-tighter">FINANCE.</span>
+                            <span className="text-xl font-black text-indigo-600 tracking-tighter">WEALTHYFY.</span>
                         </div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden xl:flex space-x-1">
+                        <nav className="hidden xl:flex space-x-1 items-center">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.to}
@@ -39,6 +41,13 @@ const MainLayout: React.FC = () => {
                                     {link.label}
                                 </Link>
                             ))}
+                            <button
+                                onClick={() => auth.removeUser()}
+                                className="ml-4 text-gray-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 flex items-center transition-colors"
+                                title="Log out"
+                            >
+                                <LogOut className="h-4 w-4" />
+                            </button>
                         </nav>
 
                         {/* Mobile menu button */}
@@ -67,6 +76,13 @@ const MainLayout: React.FC = () => {
                                     {link.label}
                                 </Link>
                             ))}
+                            <button
+                                onClick={() => auth.removeUser()}
+                                className="flex w-full items-center px-3 py-2 mt-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
+                            >
+                                <LogOut className="h-5 w-5 mr-2" />
+                                Logout
+                            </button>
                         </div>
                     </div>
                 )}
@@ -79,7 +95,7 @@ const MainLayout: React.FC = () => {
             <footer className="bg-white border-t mt-auto">
                 <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
-                        &copy; {new Date().getFullYear()} Finance Tracker — Your Wealth, Your Control.
+                        &copy; {new Date().getFullYear()} Wealthyfy — Your Wealth, Your Control.
                     </p>
                 </div>
             </footer>

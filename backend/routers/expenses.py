@@ -8,6 +8,7 @@ from database import get_db
 from schemas.schemas import Expense, ExpenseCreate
 from services.expense_service import ExpenseService
 from services.export_service import ExportService
+from auth import get_current_user, User
 
 router = APIRouter(
     prefix="/expenses",
@@ -17,9 +18,11 @@ router = APIRouter(
 
 
 @router.get("/export")
-async def export_expenses(db: AsyncSession = Depends(get_db)):
+async def export_expenses(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     """Export all expenses to CSV"""
-    service = ExpenseService(db)
+    service = ExpenseService(db, current_user.id)
     expenses = await service.get_expenses(limit=10000)  # Get all
 
     fields = [
@@ -40,22 +43,33 @@ async def export_expenses(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/", response_model=Expense, status_code=status.HTTP_201_CREATED)
-async def create_expense(expense: ExpenseCreate, db: AsyncSession = Depends(get_db)):
-    service = ExpenseService(db)
+async def create_expense(
+    expense: ExpenseCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = ExpenseService(db, current_user.id)
     return await service.create_expense(expense)
 
 
 @router.get("/", response_model=List[Expense])
 async def read_expenses(
-    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    service = ExpenseService(db)
+    service = ExpenseService(db, current_user.id)
     return await service.get_expenses(skip, limit)
 
 
 @router.get("/{expense_id}", response_model=Expense)
-async def read_expense(expense_id: UUID, db: AsyncSession = Depends(get_db)):
-    service = ExpenseService(db)
+async def read_expense(
+    expense_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = ExpenseService(db, current_user.id)
     db_expense = await service.get_expense(expense_id)
     if db_expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -64,9 +78,12 @@ async def read_expense(expense_id: UUID, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{expense_id}", response_model=Expense)
 async def update_expense(
-    expense_id: UUID, expense: ExpenseCreate, db: AsyncSession = Depends(get_db)
+    expense_id: UUID,
+    expense: ExpenseCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    service = ExpenseService(db)
+    service = ExpenseService(db, current_user.id)
     db_expense = await service.get_expense(expense_id)
     if db_expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -74,8 +91,12 @@ async def update_expense(
 
 
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_expense(expense_id: UUID, db: AsyncSession = Depends(get_db)):
-    service = ExpenseService(db)
+async def delete_expense(
+    expense_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = ExpenseService(db, current_user.id)
     db_expense = await service.get_expense(expense_id)
     if db_expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
