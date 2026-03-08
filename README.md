@@ -1,68 +1,100 @@
 # Personal Finance Tracker
 
-A complete personal finance tracking web application logic.
+A comprehensive personal finance management system designed to provide deep insights into your financial health. This application helps you track spending, manage debts, plan for the future, and visualize your net worth trends.
 
-## Technology Stack
+## 🚀 Quick Start
 
-- **Backend**: FastAPI, PostgreSQL (AsyncSQLAlchemy), Alembic, Pydantic.
-- **Frontend**: React (Vite), TypeScript, TailwindCSS, Recharts.
+The fastest way to get both the backend and frontend running is using the provided batch files (Windows):
 
-## Setup Instructions
+1. **Run Backend**: Double-click `run_backend.bat` 
+   - *Requires [uv](https://github.com/astral-sh/uv) installed.*
+   - Automatically handles dependencies, syncs the environment, and starts the FastAPI server.
+2. **Run Frontend**: Double-click `run_frontend.bat`
+   - *Requires Node.js installed.*
+   - Installs NPM packages and starts the Vite development server.
 
-### Prerequisites
+---
 
-- Python 3.11+
-- Node.js & npm
-- PostgreSQL database (or update `DATABASE_URL` in `backend/.env`)
+## 🛠️ Technology Stack
 
-### Backend Setup
+- **Backend**: [FastAPI](https://fastapi.tiangolo.com/), PostgreSQL with [AsyncSQLAlchemy](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html), [Alembic](https://alembic.sqlalchemy.org/) for migrations, [Pydantic](https://docs.pydantic.dev/) for validation, and [uv](https://github.com/astral-sh/uv) for package management.
+- **Frontend**: [React](https://reactjs.org/) (Vite), [TypeScript](https://www.typescriptlang.org/), [TailwindCSS](https://tailwindcss.com/) for styling, and [Recharts](https://recharts.org/) for interactive financial visualizations.
 
-1. Navigate to `backend` folder:
+---
+
+## ✨ Features
+
+- **📊 Advanced Dashboards**:
+  - **Main Dashboard**: High-level overview of liquid cash, net worth, and monthly trends.
+  - **Daily Overview**: Granular tracking of daily spending and income.
+  - **Monthly Dashboard**: Comprehensive monthly breakdown and comparisons.
+- **💸 Expense & Income Tracking**: Detail-oriented logging with customizable categories and historical views.
+- **🏦 Liability Management**: Track loans, mortgages, and debts with integrated payment history and progress tracking.
+- **💰 Budgeting**: Set and monitor budgets across different categories to stay on top of your financial goals.
+- **📈 Projections (Planning)**: Financial engine that projects your net worth and future balances based on current data and expected growth.
+- **🤝 Friends & Receivables**: Manage money owed to you or by you in social circles.
+- **📈 Investment Tracking**: Monitor various asset classes and their performance over time.
+- **⚙️ Settings**: Manage categories, export data to Excel, and configure system preferences.
+
+---
+
+## ⚙️ Manual Setup & Development
+
+### Backend
+
+1. **Install uv**: Follow instructions at [astral.sh/uv](https://astral.sh/uv).
+2. **Setup environment**:
    ```bash
    cd backend
+   uv sync
    ```
-2. Install dependencies:
+3. **Database Configuration**: 
+   - Create a `.env` file in the `backend` directory.
+   - Set `DATABASE_URL`: `postgresql+asyncpg://user:password@localhost/finance_tracker`
+4. **Migrations**: 
    ```bash
-   pip install -r requirements.txt
+   uv run alembic upgrade head
    ```
-3. Create `.env` file with `DATABASE_URL`. Default is `postgresql+asyncpg://user:password@localhost/finance_tracker`.
-4. Run the server:
+5. **Run Development Server**:
    ```bash
-   uvicorn main:app --reload
+   uv run uvicorn main:app --reload
    ```
-   The API will be available at `http://localhost:8000`. Swagger UI at `http://localhost:8000/docs`.
+   *Docs available at `http://localhost:8000/docs`.*
 
-### Frontend Setup
+### Frontend
 
-1. Navigate to `frontend` folder:
+1. **Install dependencies**:
    ```bash
    cd frontend
-   ```
-2. Install dependencies (if not already done):
-   ```bash
    npm install
    ```
-3. Run the development server:
+2. **Run Development Server**:
    ```bash
    npm run dev
    ```
-   The app will be available at `http://localhost:5173`.
+   *App available at `http://localhost:5173`.*
 
-### Docker Setup
+### Docker
 
-1. Ensure Docker Desktop is running.
-2. Run the application stack:
-   ```bash
-   docker-compose up --build
-   ```
-   - Frontend: `http://localhost:5173`
-   - Backend: `http://localhost:8000`
-   - Database: `postgres://postgres:password@localhost:5432/finance_tracker`
+Deploy the entire stack with a single command:
+```bash
+docker-compose up --build
+```
 
-## Features
+---
 
-- **Dashboard**: Daily, Weekly, Monthly summaries and trends.
-- **Expenses**: Track expenses with categories.
-- **Income**: Track income sources.
-- **Debts**: Track loans and repayments.
-- **Investments**: Track various investment types.
+## 📂 Project Structure
+
+```text
+├── backend         # FastAPI application with financial engine
+│   ├── alembic     # Database migration scripts
+│   ├── models      # SQLAlchemy database models
+│   ├── routers     # API endpoints grouped by feature
+│   ├── services    # Business logic & financial calculations
+│   └── schemas     # Pydantic data validation schemas
+├── frontend        # React + Vite + TypeScript
+│   ├── src/api     # Backend API integration
+│   ├── src/pages   # Feature-specific pages (Dashboard, Expenses, etc.)
+│   └── src/components # Reusable UI elements
+└── *.bat           # Windows automation scripts
+```
