@@ -3,7 +3,8 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+# load_dotenv without override=True: Docker-injected env vars take precedence
+load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql+asyncpg://user:password@localhost/finance_tracker"

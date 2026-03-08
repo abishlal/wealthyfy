@@ -74,11 +74,64 @@ The fastest way to get both the backend and frontend running is using the provid
    ```
    *App available at `http://localhost:5173`.*
 
+### Authentication
+
+Authentication is disabled by default for ease of local development. To enable it using Authentik, set these variables in your `.env` file (Docker) or in the respective per-service `.env` files (local dev):
+
+| Variable | Description |
+|---|---|
+| `ENABLE_AUTH` / `VITE_ENABLE_AUTH` | Set to `true` to enforce login |
+| `AUTHENTIK_ISSUER` / `VITE_AUTHENTIK_ISSUER` | Your Authentik application issuer URL |
+| `AUTHENTIK_CLIENT_ID` / `VITE_AUTHENTIK_CLIENT_ID` | Your Authentik application client ID |
+
 ### Docker
 
-Deploy the entire stack with a single command:
+Deploy the entire stack (backend + frontend + PostgreSQL) with Docker Compose.
+
+#### 1. Configure environment
+
+Copy the example file and fill in your values:
 ```bash
-docker-compose up --build
+cp env.example .env
+```
+
+```env
+# .env — root-level, read automatically by Docker Compose
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=finance_tracker
+
+DATABASE_URL=postgresql+asyncpg://postgres:your_secure_password@db:5432/finance_tracker
+AUTHENTIK_ISSUER=https://auth.yourdomain.com/application/o/wealthyfy/
+AUTHENTIK_CLIENT_ID=your_client_id
+ENABLE_AUTH=true
+
+VITE_API_BASE_URL=http://localhost:8000
+VITE_AUTHENTIK_ISSUER=https://auth.yourdomain.com/application/o/wealthyfy
+VITE_AUTHENTIK_CLIENT_ID=your_client_id
+VITE_ENABLE_AUTH=true
+```
+
+> **Note:** `.env` is git-ignored and never committed. Only `env.example` (with empty values) is tracked.
+
+#### 2. Start the stack
+
+```bash
+docker compose up --build
+```
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
+
+#### 3. Clean rebuild (after changing dependencies or DB credentials)
+
+```bash
+# Removes all containers AND volumes (fresh DB, fresh node_modules)
+docker compose down -v
+docker compose up --build
 ```
 
 ---

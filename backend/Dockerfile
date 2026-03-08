@@ -1,11 +1,14 @@
 # Use official Python runtime as a parent image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set the working directory in the container
 WORKDIR /app
+
+# Tell uv to use the system Python (3.12) instead of downloading its own
+ENV UV_PYTHON=/usr/local/bin/python3.12
 
 # Copy the dependency files
 COPY pyproject.toml uv.lock ./
