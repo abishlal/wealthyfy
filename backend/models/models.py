@@ -9,6 +9,7 @@ from sqlalchemy import (
     DECIMAL,
     DateTime,
     Boolean,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -29,6 +30,10 @@ class LookupValue(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "type", "value", name="uix_user_type_value"),
     )
 
 

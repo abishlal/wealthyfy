@@ -4,12 +4,17 @@ import { useEffect } from 'react';
 
 const ProtectedRoute = () => {
     const auth = useAuth();
+    const enableAuth = import.meta.env.VITE_ENABLE_AUTH === 'true';
 
     useEffect(() => {
-        if (!auth.isLoading && !auth.error && !auth.isAuthenticated) {
+        if (enableAuth && !auth.isLoading && !auth.error && !auth.isAuthenticated) {
             auth.signinRedirect();
         }
-    }, [auth.isLoading, auth.error, auth.isAuthenticated, auth]);
+    }, [auth.isLoading, auth.error, auth.isAuthenticated, auth, enableAuth]);
+
+    if (!enableAuth) {
+        return <Outlet />;
+    }
 
     if (auth.isLoading) {
         return <div>Loading authentication...</div>;
@@ -22,6 +27,7 @@ const ProtectedRoute = () => {
     if (!auth.isAuthenticated) {
         return <div>Redirecting to login...</div>;
     }
+
 
     return <Outlet />;
 };

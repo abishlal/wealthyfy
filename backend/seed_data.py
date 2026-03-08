@@ -54,18 +54,24 @@ async def seed_user_data(db: AsyncSession, user_id: str):
         existing_val_set = {v.value for v in existing_values}
 
         for i, value in enumerate(values):
-            if value not in existing_val_set:
+            if value.lower().strip() not in {
+                v.lower().strip() for v in existing_val_set
+            }:
                 print(f"Adding default {type_name}: {value} for user {user_id}")
                 lookup = LookupValue(
                     id=uuid.uuid4(),
                     type=type_name,
-                    value=value,
+                    value=value.strip(),
                     display_order=i,
                     is_active=True,
                     user_id=user_id,
                 )
                 db.add(lookup)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        print(f"DEBUG: Error during seeding for user {user_id}: {e}")
 
 
 async def ensure_default_data():

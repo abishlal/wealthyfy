@@ -10,12 +10,15 @@ from typing import Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
+
 
 AUTHENTIK_ISSUER = os.getenv(
     "AUTHENTIK_ISSUER", "http://localhost:9000/application/o/finance-tracker/"
 )
 AUTHENTIK_CLIENT_ID = os.getenv("AUTHENTIK_CLIENT_ID", "dummy-client-id")
+ENABLE_AUTH = os.getenv("ENABLE_AUTH", "false").lower() == "true"
+
 
 JWKS_URL = f"{AUTHENTIK_ISSUER.rstrip('/')}/jwks/"
 
@@ -79,6 +82,7 @@ def _get_signing_key(token: str):
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl=f"{AUTHENTIK_ISSUER}/authorize/",
     tokenUrl=f"{AUTHENTIK_ISSUER}/token/",
+    auto_error=ENABLE_AUTH,
 )
 
 
@@ -88,7 +92,22 @@ class User(BaseModel):
     email: Optional[str] = None
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> User:
+    if not ENABLE_AUTH:
+        # Return a dummy user if authentication is disabled
+        return User(
+            id="disabled-auth-user",
+            username="Guest",
+            email="guest@example.com",
+        )
+
+    if not token:
+        # oauth2_scheme handles this if auto_error=True, but let's be safe
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
     print(f"DEBUG: get_current_user called, token length: {len(token) if token else 0}")
     print(
         f"DEBUG: Validating against Issuer: '{AUTHENTIK_ISSUER}' and Audience: '{AUTHENTIK_CLIENT_ID}'"
