@@ -22,7 +22,6 @@ interface SplitFriend {
 
 const Expenses: React.FC = () => {
     const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [categories, setCategories] = useState<LookupValue[]>([]);
     const [accounts, setAccounts] = useState<LookupValue[]>([]);
@@ -42,7 +41,6 @@ const Expenses: React.FC = () => {
     const [formData, setFormData] = useState(defaultForm);
     const [isSplit, setIsSplit] = useState(false);
     // Your share (only relevant in split mode; otherwise = total_amount)
-    const [myShare, setMyShare] = useState('');
     // List of per-friend splits
     const [splitFriends, setSplitFriends] = useState<SplitFriend[]>([
         { friend_id: '', amount: '', who_paid: 'me' }
@@ -51,7 +49,6 @@ const Expenses: React.FC = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const fetchData = async () => {
-        setLoading(true);
         try {
             const [expensesRes, categoriesRes, accountsRes, friendsRes] = await Promise.all([
                 api.get('/expenses/'),
@@ -75,8 +72,6 @@ const Expenses: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to fetch data", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -127,7 +122,7 @@ const Expenses: React.FC = () => {
                     total_amount: totalAmount,
                     who_paid: 'me',
                     split_type: 'none',
-                    friend_id: '',
+                    friend_id: null,
                     friend_share: 0,
                 };
                 if (editingId) {
@@ -156,7 +151,6 @@ const Expenses: React.FC = () => {
             total_amount: '',
         });
         setIsSplit(false);
-        setMyShare('');
         setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]);
     };
 
@@ -182,7 +176,6 @@ const Expenses: React.FC = () => {
             total_amount: expense.amount.toString(),
         });
         setIsSplit(false);
-        setMyShare(expense.amount.toString());
         setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]);
         setIsModalOpen(true);
     };
@@ -385,8 +378,8 @@ const Expenses: React.FC = () => {
                                         type="button"
                                         onClick={() => { setIsSplit(false); setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]); }}
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${!isSplit
-                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                                : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                            : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-white'
                                             }`}
                                     >
                                         <div className={`p-2 rounded-lg ${!isSplit ? 'bg-indigo-100' : 'bg-gray-100'}`}>
@@ -402,8 +395,8 @@ const Expenses: React.FC = () => {
                                         type="button"
                                         onClick={enableSplit}
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${isSplit
-                                                ? 'border-violet-500 bg-violet-50 text-violet-700'
-                                                : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                            ? 'border-violet-500 bg-violet-50 text-violet-700'
+                                            : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-white'
                                             }`}
                                     >
                                         <div className={`p-2 rounded-lg ${isSplit ? 'bg-violet-100' : 'bg-gray-100'}`}>
