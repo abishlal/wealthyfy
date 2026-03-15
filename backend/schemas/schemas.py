@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 import datetime as dt
 from uuid import UUID
@@ -19,6 +19,11 @@ class ExpenseBase(BaseModel):
     is_shared: Optional[bool] = False
     total_people: Optional[int] = 1
     friend_shares: Optional[dict] = None  # { "Friend Name": amount }
+    
+class FriendSplit(BaseModel):
+    friend_id: UUID
+    friend_share: Decimal
+    who_paid: str = "me"  # me, friend
 
 
 class ExpenseCreate(ExpenseBase):
@@ -27,6 +32,7 @@ class ExpenseCreate(ExpenseBase):
     friend_id: Optional[UUID] = None
     friend_share: Optional[Decimal] = Decimal("0")
     total_amount: Optional[Decimal] = None
+    splits: Optional[List[FriendSplit]] = None
 
 
 class Expense(ExpenseBase):

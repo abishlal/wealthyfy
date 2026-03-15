@@ -96,23 +96,28 @@ const Expenses: React.FC = () => {
 
         try {
             if (isSplit) {
-                // For each friend split entry, send a separate expense API call
-                for (const sf of splitFriends) {
-                    if (!sf.friend_id) continue;
-                    const payload = {
-                        ...formData,
-                        amount: computedMyShare,
-                        total_amount: totalAmount,
-                        who_paid: sf.who_paid,
-                        split_type: 'split',
+                // Construct splits array
+                const splits = splitFriends
+                    .filter(sf => sf.friend_id !== '')
+                    .map(sf => ({
                         friend_id: sf.friend_id,
                         friend_share: parseFloat(sf.amount) || 0,
-                    };
-                    if (editingId && splitFriends.length === 1) {
-                        await api.put(`/expenses/${editingId}`, payload);
-                    } else {
-                        await api.post('/expenses/', payload);
-                    }
+                        who_paid: sf.who_paid
+                    }));
+
+                const payload = {
+                    ...formData,
+                    amount: computedMyShare,
+                    total_amount: totalAmount,
+                    who_paid: 'split', // Indicates shared expense
+                    split_type: 'split',
+                    splits: splits
+                };
+
+                if (editingId) {
+                    await api.put(`/expenses/${editingId}`, payload);
+                } else {
+                    await api.post('/expenses/', payload);
                 }
             } else {
                 // Solo expense

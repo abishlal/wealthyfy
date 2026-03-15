@@ -41,7 +41,13 @@ const FriendBalances: React.FC = () => {
         try {
             setLoading(true);
             const data = await friendsApi.getBalances();
-            setBalances(data);
+            const formattedData = data.map(b => ({
+                ...b,
+                net_balance: Number(b.net_balance),
+                you_owe: Number(b.you_owe),
+                you_are_owed: Number(b.you_are_owed)
+            }));
+            setBalances(formattedData);
         } catch (error) {
             console.error('Failed to fetch friend balances', error);
         } finally {
@@ -174,7 +180,12 @@ const FriendBalances: React.FC = () => {
         try {
             setSelectedFriend(friend);
             const data = await friendsApi.getLedger(friend.friend_id);
-            setLedger(data);
+            const formattedData = data.map(tx => ({
+                ...tx,
+                amount: Number(tx.amount),
+                running_balance: Number(tx.running_balance)
+            }));
+            setLedger(formattedData);
             setIsLedgerOpen(true);
         } catch (error) {
             console.error('Failed to fetch ledger', error);

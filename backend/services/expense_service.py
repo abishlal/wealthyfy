@@ -24,6 +24,7 @@ class ExpenseService:
         expense_data.pop("is_shared", None)
         expense_data.pop("total_people", None)
         expense_data.pop("friend_shares", None)
+        splits = expense_data.pop("splits", None)
 
         # Create the expense record (Always your share only)
         # amount field in expense_data is already your share from the frontend
@@ -32,9 +33,39 @@ class ExpenseService:
         await self.db.flush()
 
         # Handle Friend Logic
-        if split_type != "none" and friend_id:
-            friend_service = FriendService(self.db, self.user_id)
-
+        friend_service = FriendService(self.db, self.user_id)
+        
+        # New multi-split logic
+        if splits:
+            for split in splits:
+                if split['who_paid'] == "me":
+                    # You paid, friend owes you their share
+                    await friend_service.create_transaction(
+                        FriendTransactionCreate(
+                            friend_id=split['friend_id'],
+                            amount=split['friend_share'],
+                            direction="friend_owes_you",
+                            reference_type="expense",
+                            reference_id=db_expense.id,
+                            description=f"Split expense: {db_expense.item}",
+                            date=db_expense.purchase_date,
+                        )
+                    )
+                else:
+                    # Friend paid, you owe them your share
+                    await friend_service.create_transaction(
+                        FriendTransactionCreate(
+                            friend_id=split['friend_id'],
+                            amount=db_expense.amount,
+                            direction="you_owe_friend",
+                            reference_type="expense",
+                            reference_id=db_expense.id,
+                            description=f"Split expense: {db_expense.item}",
+                            date=db_expense.purchase_date,
+                        )
+                    )
+        # Fallback to old single-split logic for backward compatibility
+        elif split_type != "none" and friend_id:
             if split_type == "full":
                 # CASE 2: Friend Paid Fully
                 # Your share = total_amount
