@@ -12,7 +12,8 @@ const oidcConfig = {
   scope: "openid profile email",
   userStore: new WebStorageStateStore({ store: window.localStorage }),
   monitorSession: false,
-  automaticSilentRenew: false,
+  automaticSilentRenew: true,
+  silent_redirect_uri: window.location.origin,
   onSigninCallback: () => {
     window.history.replaceState(
       {},
