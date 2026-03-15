@@ -37,9 +37,9 @@ class ExpenseService:
         
         # New multi-split logic
         if splits:
-            for split in splits:
-                if split['who_paid'] == "me":
-                    # You paid, friend owes you their share
+            if who_paid == "me":
+                # You paid for everyone
+                for split in splits:
                     await friend_service.create_transaction(
                         FriendTransactionCreate(
                             friend_id=split['friend_id'],
@@ -51,19 +51,20 @@ class ExpenseService:
                             date=db_expense.purchase_date,
                         )
                     )
-                else:
-                    # Friend paid, you owe them your share
-                    await friend_service.create_transaction(
-                        FriendTransactionCreate(
-                            friend_id=split['friend_id'],
-                            amount=db_expense.amount,
-                            direction="you_owe_friend",
-                            reference_type="expense",
-                            reference_id=db_expense.id,
-                            description=f"Split expense: {db_expense.item}",
-                            date=db_expense.purchase_date,
-                        )
+            else:
+                # A friend paid the whole bill, you owe them your share
+                # assume who_paid is the friend_id
+                await friend_service.create_transaction(
+                    FriendTransactionCreate(
+                        friend_id=who_paid,
+                        amount=db_expense.amount,
+                        direction="you_owe_friend",
+                        reference_type="expense",
+                        reference_id=db_expense.id,
+                        description=f"Split expense: {db_expense.item}",
+                        date=db_expense.purchase_date,
                     )
+                )
         # Fallback to old single-split logic for backward compatibility
         elif split_type != "none" and friend_id:
             if split_type == "full":

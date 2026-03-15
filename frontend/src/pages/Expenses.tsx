@@ -17,7 +17,6 @@ interface Expense {
 interface SplitFriend {
     friend_id: string;
     amount: string;      // friend's share amount
-    who_paid: 'me' | 'friend';  // who physically paid
 }
 
 const Expenses: React.FC = () => {
@@ -43,8 +42,9 @@ const Expenses: React.FC = () => {
     // Your share (only relevant in split mode; otherwise = total_amount)
     // List of per-friend splits
     const [splitFriends, setSplitFriends] = useState<SplitFriend[]>([
-        { friend_id: '', amount: '', who_paid: 'me' }
+        { friend_id: '', amount: '' }
     ]);
+    const [splitWhoPaid, setSplitWhoPaid] = useState<string>('me');
 
     const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -102,14 +102,13 @@ const Expenses: React.FC = () => {
                     .map(sf => ({
                         friend_id: sf.friend_id,
                         friend_share: parseFloat(sf.amount) || 0,
-                        who_paid: sf.who_paid
                     }));
 
                 const payload = {
                     ...formData,
                     amount: computedMyShare,
                     total_amount: totalAmount,
-                    who_paid: 'split', // Indicates shared expense
+                    who_paid: splitWhoPaid, 
                     split_type: 'split',
                     splits: splits
                 };
@@ -156,7 +155,8 @@ const Expenses: React.FC = () => {
             total_amount: '',
         });
         setIsSplit(false);
-        setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]);
+        setSplitFriends([{ friend_id: '', amount: '' }]);
+        setSplitWhoPaid('me');
     };
 
     const handleDelete = async (id: string) => {
@@ -181,7 +181,8 @@ const Expenses: React.FC = () => {
             total_amount: expense.amount.toString(),
         });
         setIsSplit(false);
-        setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]);
+        setSplitFriends([{ friend_id: '', amount: '' }]);
+        setSplitWhoPaid('me');
         setIsModalOpen(true);
     };
 
@@ -208,6 +209,7 @@ const Expenses: React.FC = () => {
         const count = splitFriends.length + 1;
         const equally = (total / count).toFixed(2);
         setSplitFriends(splitFriends.map(sf => ({ ...sf, amount: equally })));
+        setSplitWhoPaid('me');
         setIsSplit(true);
     };
 
@@ -217,13 +219,13 @@ const Expenses: React.FC = () => {
         const equally = total > 0 ? (total / newCount).toFixed(2) : '';
         setSplitFriends([
             ...splitFriends.map(sf => ({ ...sf, amount: equally })),
-            { friend_id: '', amount: equally, who_paid: 'me' as const }
+            { friend_id: '', amount: equally }
         ]);
     };
 
     const removeFriendRow = (idx: number) => {
         const updated = splitFriends.filter((_, i) => i !== idx);
-        setSplitFriends(updated.length > 0 ? updated : [{ friend_id: '', amount: '', who_paid: 'me' }]);
+        setSplitFriends(updated.length > 0 ? updated : [{ friend_id: '', amount: '' }]);
         if (updated.length === 0) setIsSplit(false);
     };
 
@@ -381,7 +383,7 @@ const Expenses: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => { setIsSplit(false); setSplitFriends([{ friend_id: '', amount: '', who_paid: 'me' }]); }}
+                                        onClick={() => { setIsSplit(false); setSplitFriends([{ friend_id: '', amount: '' }]); }}
                                         className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${!isSplit
                                             ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                                             : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-white'
@@ -434,6 +436,34 @@ const Expenses: React.FC = () => {
                                     </div>
 
                                     <div className="p-5 space-y-4">
+                                        {/* Who paid selector */}
+                                        <div className="bg-white rounded-xl border border-violet-100 shadow-sm p-4">
+                                            <label className="block text-[10px] font-black text-violet-400 uppercase tracking-widest mb-3">Who paid the total bill? (₹{totalAmount})</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSplitWhoPaid('me')}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border-2 ${splitWhoPaid === 'me' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-50 bg-gray-50 text-gray-400 opacity-60'}`}
+                                                >
+                                                    Me
+                                                </button>
+                                                {splitFriends.filter(sf => sf.friend_id).map(sf => {
+                                                    const friend = availableFriends.find(f => f.id === sf.friend_id);
+                                                    if (!friend) return null;
+                                                    return (
+                                                        <button
+                                                            key={sf.friend_id}
+                                                            type="button"
+                                                            onClick={() => setSplitWhoPaid(sf.friend_id)}
+                                                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border-2 ${splitWhoPaid === sf.friend_id ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-50 bg-gray-50 text-gray-400 opacity-60'}`}
+                                                        >
+                                                            {friend.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
                                         {/* My share display */}
                                         <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-violet-100 shadow-sm">
                                             <div className="flex items-center gap-2">
@@ -474,41 +504,26 @@ const Expenses: React.FC = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* Amount + Who paid */}
-                                                        <div className="grid grid-cols-2 gap-0 divide-x divide-violet-50">
-                                                            <div className="px-4 py-3">
-                                                                <div className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Their Share (₹)</div>
-                                                                <input
-                                                                    type="number"
-                                                                    value={sf.amount}
-                                                                    onChange={(e) => updateFriendRow(idx, 'amount', e.target.value)}
-                                                                    className="w-full bg-transparent font-black text-gray-800 text-sm outline-none placeholder-gray-300"
-                                                                    placeholder="0.00"
-                                                                />
-                                                            </div>
-                                                            <div className="px-4 py-3">
-                                                                <div className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1.5">Who paid the bill?</div>
-                                                                <div className="flex bg-violet-50 rounded-lg p-0.5 gap-0.5">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => updateFriendRow(idx, 'who_paid', 'me')}
-                                                                        className={`flex-1 py-1 rounded text-[9px] font-black uppercase transition-all ${sf.who_paid === 'me' ? 'bg-violet-600 text-white shadow' : 'text-gray-400'}`}
-                                                                    >Me</button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => updateFriendRow(idx, 'who_paid', 'friend')}
-                                                                        className={`flex-1 py-1 rounded text-[9px] font-black uppercase transition-all ${sf.who_paid === 'friend' ? 'bg-violet-600 text-white shadow' : 'text-gray-400'}`}
-                                                                    >Friend</button>
-                                                                </div>
-                                                            </div>
+                                                        {/* Amount */}
+                                                        <div className="px-4 py-3">
+                                                            <div className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Their Share (₹)</div>
+                                                            <input
+                                                                type="number"
+                                                                value={sf.amount}
+                                                                onChange={(e) => updateFriendRow(idx, 'amount', e.target.value)}
+                                                                className="w-full bg-transparent font-black text-gray-800 text-sm outline-none placeholder-gray-300"
+                                                                placeholder="0.00"
+                                                            />
                                                         </div>
 
                                                         {/* Summary line */}
                                                         {sf.friend_id && sf.amount && (
                                                             <div className="px-4 py-2 bg-violet-50/50 border-t border-violet-50 text-[10px] font-bold text-violet-500 italic">
-                                                                {sf.who_paid === 'me'
+                                                                {splitWhoPaid === 'me'
                                                                     ? `${friendName || 'Friend'} owes you ₹${parseFloat(sf.amount).toFixed(2)}`
-                                                                    : `You owe ${friendName || 'Friend'} ₹${parseFloat(sf.amount).toFixed(2)}`
+                                                                    : splitWhoPaid === sf.friend_id
+                                                                        ? `You owe ${friendName || 'Friend'} ₹${computedMyShare.toFixed(2)}`
+                                                                        : `${friendName || 'Friend'} owes ${availableFriends.find(f => f.id === splitWhoPaid)?.name || 'someone'} ₹${parseFloat(sf.amount).toFixed(2)}`
                                                                 }
                                                             </div>
                                                         )}
