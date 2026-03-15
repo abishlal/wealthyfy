@@ -107,7 +107,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                        Welcome back, {auth.user?.profile.preferred_username || auth.user?.profile.name || 'User'}!
+                        Welcome back, {auth.user?.profile.name || auth.user?.profile.preferred_username || 'User'}!
                     </h2>
                     <p className="text-gray-500 font-medium">Real-time status of your financial ecosystem.</p>
                 </div>
