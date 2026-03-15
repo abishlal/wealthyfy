@@ -206,21 +206,21 @@ const FriendBalances: React.FC = () => {
                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Owed to You</p>
                     <div className="flex items-center gap-1 text-emerald-700 font-black text-lg">
                         <IndianRupee size={16} />
-                        {totalYouAreOwed}
+                        {totalYouAreOwed.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </div>
                 </div>
                 <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100">
                     <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">You Owe</p>
                     <div className="flex items-center gap-1 text-rose-700 font-black text-lg">
                         <IndianRupee size={16} />
-                        {totalYouOwe}
+                        {totalYouOwe.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </div>
                 </div>
                 <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
                     <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Net Position</p>
                     <div className="flex items-center gap-1 text-indigo-700 font-black text-lg">
                         <IndianRupee size={16} />
-                        {netPosition}
+                        {netPosition.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </div>
                 </div>
             </div>
