@@ -122,9 +122,9 @@ class FriendService:
         return FriendBalance(
             friend_id=friend.id,
             friend_name=friend.name,
-            net_balance=row.net_balance or Decimal("0"),
-            you_owe=row.you_owe or Decimal("0"),
-            you_are_owed=row.you_are_owed or Decimal("0"),
+            net_balance=Decimal(str(round(float(row.net_balance or 0), 2))),
+            you_owe=Decimal(str(round(float(row.you_owe or 0), 2))),
+            you_are_owed=Decimal(str(round(float(row.you_are_owed or 0), 2))),
         )
 
     async def create_transaction(

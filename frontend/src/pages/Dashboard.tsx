@@ -314,7 +314,7 @@ const MetricCard = ({ title, amount, icon, color, trend }: { title: string, amou
                 <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${text} ${bgContent} px-2 py-0.5 rounded-full whitespace-nowrap`}>{trend}</span>
             </div>
             <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest mb-1 truncate">{title}</p>
-            <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight">{amount < 0 ? '-' : ''}₹{Math.abs(amount).toLocaleString()}</p>
+            <p className="text-xl md:text-3xl font-black text-gray-900 tracking-tight">{amount < 0 ? '-' : ''}₹{Math.abs(amount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
         </div>
     );
 };
