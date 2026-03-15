@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import settingsApi, { type LookupValue } from '../api/settingsApi';
 import friendsApi, { type Friend } from '../api/friendsApi';
-import { UserMinus, Settings, Users } from 'lucide-react';
+import { UserMinus, Settings, Users, AlertTriangle, Upload, CheckCircle2 } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
     const [lookupTypes, setLookupTypes] = useState<string[]>([]);
@@ -14,7 +14,12 @@ const SettingsPage: React.FC = () => {
     // Friend State
     const [friends, setFriends] = useState<Friend[]>([]);
     const [newFriendName, setNewFriendName] = useState('');
-    const [activeTab, setActiveTab] = useState<'lookups' | 'friends'>('lookups');
+    const [activeTab, setActiveTab] = useState<'lookups' | 'friends' | 'import'>('lookups');
+
+    // Import State
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     useEffect(() => {
         fetchLookupTypes();
@@ -111,6 +116,22 @@ const SettingsPage: React.FC = () => {
         }
     };
 
+    const handleImport = async () => {
+        if (!importFile) return;
+        setIsImporting(true);
+        setImportMessage(null);
+        try {
+            await settingsApi.importExcel(importFile);
+            setImportMessage({ type: 'success', text: 'Data imported successfully! Your existing data has been replaced.' });
+            setImportFile(null);
+            // Optionally refresh other data or redirect
+        } catch (error: any) {
+            setImportMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to import data.' });
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
     const startEditing = (val: LookupValue) => {
         setEditingId(val.id);
         setEditingValue(val.value);
@@ -145,6 +166,13 @@ const SettingsPage: React.FC = () => {
                 >
                     <Users className="w-4 h-4" />
                     Friend Management
+                </button>
+                <button
+                    onClick={() => setActiveTab('import')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'import' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'}`}
+                >
+                    <Upload className="w-4 h-4" />
+                    Data Import
                 </button>
             </div>
 
@@ -240,7 +268,7 @@ const SettingsPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'friends' ? (
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
                         <div className="flex items-center gap-3 mb-6">
@@ -290,6 +318,75 @@ const SettingsPage: React.FC = () => {
                                     </div>
                                 ))
                             )}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Upload className="w-6 h-6 text-indigo-500" />
+                            <h2 className="text-2xl font-black text-gray-800">Excel Data Import</h2>
+                        </div>
+
+                        <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-2xl mb-8">
+                            <div className="flex items-start gap-4">
+                                <AlertTriangle className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" />
+                                <div>
+                                    <h3 className="text-amber-800 font-black text-lg mb-1">Critical Warning</h3>
+                                    <p className="text-amber-700 font-medium">
+                                        Importing data will <strong>permanently replace</strong> all your existing records (Expenses, Income, Liabilities, and Investments). This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="border-2 border-dashed border-gray-200 rounded-3xl p-10 text-center hover:border-indigo-300 transition-all bg-gray-50/50">
+                                <input
+                                    type="file"
+                                    id="excel-upload"
+                                    className="hidden"
+                                    accept=".xlsx"
+                                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                                />
+                                <label htmlFor="excel-upload" className="cursor-pointer flex flex-col items-center gap-4">
+                                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-gray-100">
+                                        <Upload className={`w-8 h-8 ${importFile ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-black text-gray-800">
+                                            {importFile ? importFile.name : 'Click to select Excel file'}
+                                        </p>
+                                        <p className="text-sm font-medium text-gray-500">Only .xlsx files are supported</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {importMessage && (
+                                <div className={`flex items-center gap-3 p-4 rounded-2xl font-bold ${importMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+                                    {importMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                                    {importMessage.text}
+                                </div>
+                            )}
+
+                            <button
+                                className={`w-full py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${!importFile || isImporting ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'}`}
+                                onClick={handleImport}
+                                disabled={!importFile || isImporting}
+                            >
+                                {isImporting ? (
+                                    <>
+                                        <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                                        Importing Data...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-5 h-5" />
+                                        Start Import
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>

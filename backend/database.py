@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+asyncpg://user:password@localhost/finance_tracker"
+    "DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost/finance_tracker"
 )
 
 engine = create_async_engine(DATABASE_URL, echo=True)

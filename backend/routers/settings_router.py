@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_db
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from auth import get_current_user, User
 from seed_data import seed_user_data
+from services.import_service import ImportService
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -74,6 +75,27 @@ async def get_lookup_values_by_type(
         .order_by(LookupValue.display_order)
     )
     return result.scalars().all()
+
+
+@router.post("/import")
+async def import_excel_data(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not file.filename.endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail="Only .xlsx files are allowed")
+
+    try:
+        content = await file.read()
+        success = await ImportService.import_from_excel(db, current_user.id, content)
+        if success:
+            return {"message": "Data imported successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to import data")
+    except Exception as e:
+        print(f"Import error: {e}")
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
 @router.post("/{type_name}", response_model=LookupValueResponse)
@@ -182,3 +204,5 @@ async def get_all_lookup_values_grouped(
             grouped[lookup.type] = []
         grouped[lookup.type].append(lookup)
     return grouped
+
+
