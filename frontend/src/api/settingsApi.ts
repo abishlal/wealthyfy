@@ -56,6 +56,11 @@ const settingsApi = {
             },
         });
         return response.data;
+    },
+
+    backupToGoogleSheets: async (): Promise<{ message: string }> => {
+        const response = await api.post('/settings/backup/google-sheet');
+        return response.data;
     }
 };
 

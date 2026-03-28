@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import settingsApi, { type LookupValue } from '../api/settingsApi';
 import friendsApi, { type Friend } from '../api/friendsApi';
-import { UserMinus, Settings, Users, AlertTriangle, Upload, CheckCircle2 } from 'lucide-react';
+import { UserMinus, Settings, Users, AlertTriangle, Upload, CheckCircle2, Cloud } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
     const [lookupTypes, setLookupTypes] = useState<string[]>([]);
@@ -20,6 +20,10 @@ const SettingsPage: React.FC = () => {
     const [importFile, setImportFile] = useState<File | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [importMessage, setImportMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    // Backup State
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [backupMessage, setBackupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     useEffect(() => {
         fetchLookupTypes();
@@ -132,6 +136,19 @@ const SettingsPage: React.FC = () => {
         }
     };
 
+    const handleBackup = async () => {
+        setIsBackingUp(true);
+        setBackupMessage(null);
+        try {
+            await settingsApi.backupToGoogleSheets();
+            setBackupMessage({ type: 'success', text: 'Data successfully backed up to Google Sheets!' });
+        } catch (error: any) {
+            setBackupMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to backup data to Google Sheets.' });
+        } finally {
+            setIsBackingUp(false);
+        }
+    };
+
     const startEditing = (val: LookupValue) => {
         setEditingId(val.id);
         setEditingValue(val.value);
@@ -172,7 +189,7 @@ const SettingsPage: React.FC = () => {
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${activeTab === 'import' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'}`}
                 >
                     <Upload className="w-4 h-4" />
-                    Data Import
+                    Data Import & Backup
                 </button>
             </div>
 
@@ -322,7 +339,42 @@ const SettingsPage: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-2xl mx-auto space-y-8">
+                    {/* Google Sheets Backup Section */}
+                    <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Cloud className="w-6 h-6 text-indigo-500" />
+                            <h2 className="text-2xl font-black text-gray-800">Google Sheets Backup</h2>
+                        </div>
+                        <p className="text-gray-500 mb-6 font-medium">Instantly snapshot your current database to your configured Google Sheet for safe keeping.</p>
+                        
+                        {backupMessage && (
+                            <div className={`flex items-center gap-3 p-4 mb-6 rounded-2xl font-bold ${backupMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+                                {backupMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                                {backupMessage.text}
+                            </div>
+                        )}
+
+                        <button
+                            className={`w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${isBackingUp ? 'bg-indigo-400 text-white cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'}`}
+                            onClick={handleBackup}
+                            disabled={isBackingUp}
+                        >
+                            {isBackingUp ? (
+                                <>
+                                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                                    Backing up to Google...
+                                </>
+                            ) : (
+                                <>
+                                    <Cloud className="w-5 h-5" />
+                                    Backup to Google Sheets
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Excel Data Import Section */}
                     <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
                         <div className="flex items-center gap-3 mb-6">
                             <Upload className="w-6 h-6 text-indigo-500" />

@@ -9,6 +9,7 @@ from uuid import UUID
 from auth import get_current_user, User
 from seed_data import seed_user_data
 from services.import_service import ImportService
+from services.google_sheets_service import GoogleSheetsService
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -96,6 +97,22 @@ async def import_excel_data(
     except Exception as e:
         print(f"Import error: {e}")
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+
+@router.post("/backup/google-sheet")
+async def backup_to_google_sheet(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        success = await GoogleSheetsService.export_to_sheet(db, current_user.id)
+        if success:
+            return {"message": "Data successfully backed up to Google Sheets."}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to backup data.")
+    except Exception as e:
+        print(f"Google Sheet Backup error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{type_name}", response_model=LookupValueResponse)

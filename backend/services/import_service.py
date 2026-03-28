@@ -22,6 +22,14 @@ class ImportService:
             return val.date()
         if isinstance(val, date):
             return val
+        if isinstance(val, str):
+            from datetime import datetime as dt
+            val = val.strip().split(" ")[0]
+            for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d"):
+                try:
+                    return dt.strptime(val, fmt).date()
+                except ValueError:
+                    continue
         return None
 
     @staticmethod
