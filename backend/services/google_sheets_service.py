@@ -1,4 +1,6 @@
 import os
+import json
+import base64
 import gspread
 from google.oauth2.service_account import Credentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,9 +13,20 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 class GoogleSheetsService:
     @staticmethod
     def get_client() -> gspread.client.Client:
+        creds_b64 = os.environ.get("GOOGLE_CREDENTIALS_B64")
+        if creds_b64:
+            try:
+                creds_json = base64.b64decode(creds_b64).decode('utf-8')
+                creds_dict = json.loads(creds_json)
+                creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+                return gspread.authorize(creds)
+            except Exception as e:
+                raise ValueError(f"Failed to parse GOOGLE_CREDENTIALS_B64: {e}")
+
+        # Fallback to local file for development
         creds_path = os.path.join(os.path.dirname(__file__), "..", "credentials.json")
         if not os.path.exists(creds_path):
-            raise FileNotFoundError("credentials.json not found in the backend directory. Please refer to the implementation plan for setup instructions.")
+            raise FileNotFoundError("credentials.json not found or GOOGLE_CREDENTIALS_B64 env var is not set.")
         
         creds = Credentials.from_service_account_file(creds_path, scopes=SCOPES)
         return gspread.authorize(creds)
