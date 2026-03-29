@@ -112,6 +112,7 @@ class ImportService:
                 emi = row[6] if row[6] is not None else Decimal("0")
                 start_date = cls.to_date(row[0]) or date.today()
                 due_day = cls.extract_day_from_string(row[11]) if len(row) > 11 else None
+                notes = str(row[12]) if len(row) > 12 and row[12] is not None else None
 
                 type_id = get_lookup_id("liabilities_type", loan_type)
                 lender_id = get_lookup_id("lender", lender)
@@ -129,6 +130,7 @@ class ImportService:
                         start_date=start_date,
                         term_months=int(tenure_months),
                         due_day=due_day,
+                        notes=notes,
                     )
                     db.add(lib)
                     liabilities_map[(str(lender).strip().lower(), str(loan_type).strip().lower())] = lib.id

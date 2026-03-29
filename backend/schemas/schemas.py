@@ -79,6 +79,7 @@ class LiabilityBase(BaseModel):
     start_date: date
     term_months: int
     due_day: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class LiabilityCreate(LiabilityBase):
@@ -96,6 +97,7 @@ class LiabilityUpdate(BaseModel):
     total_payable_amount: Optional[Decimal] = None
     start_date: Optional[date] = None
     due_day: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class Liability(LiabilityBase):

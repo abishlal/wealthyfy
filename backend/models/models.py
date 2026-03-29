@@ -106,6 +106,7 @@ class Liability(Base):
     start_date = Column(Date, nullable=False)
     term_months = Column(Integer, nullable=False)
     due_day = Column(Integer, nullable=True)
+    notes = Column(Text, nullable=True)
 
     liabilities_type = relationship("LookupValue", foreign_keys=[liabilities_type_id])
     lender = relationship("LookupValue", foreign_keys=[lender_id])

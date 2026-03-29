@@ -40,6 +40,7 @@ async def export_liabilities(
         "emi_amount",
         "start_date",
         "term_months",
+        "notes",
     ]
     csv_data = ExportService.to_csv(liabilities, fields)
 

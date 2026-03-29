@@ -55,7 +55,7 @@ class GoogleSheetsService:
         liabilities = res.scalars().all()
         ws_liabilities = get_or_create_worksheet("Debts List")
         ws_liabilities.clear()
-        data_liab = [["Start Date", "Loan Type", "Lender", "Original Amount", "Interest Rate", "Tenure (Months)", "EMI", "", "", "", "", "Due Day"]]
+        data_liab = [["Start Date", "Loan Type", "Lender", "Original Amount", "Interest Rate", "Tenure (Months)", "EMI", "", "", "", "", "Due Day", "Notes"]]
         for lib in liabilities:
             data_liab.append([
                 str(lib.start_date) if lib.start_date else "",
@@ -66,7 +66,8 @@ class GoogleSheetsService:
                 lib.term_months,
                 float(lib.emi_amount),
                 "", "", "", "",
-                lib.due_day or ""
+                lib.due_day or "",
+                lib.notes or ""
             ])
         if len(data_liab) > 1:
             ws_liabilities.update(values=data_liab, range_name="A1")

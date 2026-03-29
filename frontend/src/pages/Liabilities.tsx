@@ -17,6 +17,7 @@ interface Liability {
     outstanding_amount: number;
     remaining_term: number;
     start_date: string;
+    notes?: string;
 }
 
 interface LiabilityPayment {
@@ -36,7 +37,8 @@ const emptyForm = {
     emi_amount: '',
     term_months: '',
     total_payable_amount: '',
-    start_date: new Date().toISOString().split('T')[0]
+    start_date: new Date().toISOString().split('T')[0],
+    notes: ''
 };
 
 const LiabilitiesPage: React.FC = () => {
@@ -154,6 +156,7 @@ const LiabilitiesPage: React.FC = () => {
                 emi_amount: parseFloat(editFormData.emi_amount),
                 term_months: parseInt(editFormData.term_months),
                 start_date: editFormData.start_date,
+                notes: editFormData.notes || null,
                 total_payable_amount: editFormData.total_payable_amount
                     ? parseFloat(editFormData.total_payable_amount)
                     : null
@@ -178,7 +181,8 @@ const LiabilitiesPage: React.FC = () => {
             emi_amount: String(liability.emi_amount || ''),
             term_months: String(liability.term_months || ''),
             total_payable_amount: String(liability.total_payable_amount || ''),
-            start_date: liability.start_date || new Date().toISOString().split('T')[0]
+            start_date: liability.start_date || new Date().toISOString().split('T')[0],
+            notes: liability.notes || ''
         });
         setIsEditModalOpen(true);
     };
@@ -271,6 +275,7 @@ const LiabilitiesPage: React.FC = () => {
                 />
             </div>
             <div><label className="block text-sm font-medium text-gray-700">Start Date</label><input type="date" required value={data.start_date} onChange={(e) => setter({ ...data, start_date: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" /></div>
+            <div><label className="block text-sm font-medium text-gray-700">Notes (Optional)</label><textarea value={data.notes} onChange={(e) => setter({ ...data, notes: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" rows={2} placeholder="Add any details about this liability"></textarea></div>
         </>
     );
 
@@ -362,6 +367,11 @@ const LiabilitiesPage: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
+                                {liability.notes && (
+                                    <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-2 rounded-md italic">
+                                        "{liability.notes}"
+                                    </div>
+                                )}
 
                                 <div className="space-y-3 mb-6">
                                     <div className="flex justify-between text-sm">
