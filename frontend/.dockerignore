@@ -1,0 +1,55 @@
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+.github/
+.vscode/
+dist
+node_modules
+.git
+.gitignore
+
+
+# Python cache
+__pycache__
+
+# Python environment
+.Python
+.env*
+
+# Pipenv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Tox
+.tox
+
+# Coverage
+.coverage
+.coverage.*
+
+# Cache and temporary files
+.cache
+
+# Nose testing tool
+nosetests.xml
+
+# Coverage reports
+coverage.xml
+*,cover
+
+# Log files
+*.log
+
+# Git
+.git*
+
+# Unit test files
+tests
+
+# Scripts
+scripts
+
+# MyPy cache
+.mypy_cache
