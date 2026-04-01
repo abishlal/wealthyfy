@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -11,6 +11,7 @@ from schemas.schemas import (
     LiabilityUpdate,
     LiabilityPayment,
     LiabilityPaymentCreate,
+    LiabilityPaymentUpdate,
 )
 from services.liability_service import LiabilityService
 from services.export_service import ExportService
@@ -72,15 +73,27 @@ async def read_liabilities(
 @router.put("/{liability_id}", response_model=Liability)
 async def update_liability(
     liability_id: UUID,
-    data: LiabilityUpdate,
+    liability: LiabilityUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     service = LiabilityService(db, current_user.id)
-    updated = await service.update_liability(liability_id, data)
+    updated = await service.update_liability(liability_id, liability)
     if not updated:
         raise HTTPException(status_code=404, detail="Liability not found")
     return updated
+
+
+@router.delete("/{liability_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_liability(
+    liability_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = LiabilityService(db, current_user.id)
+    deleted = await service.delete_liability(liability_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Liability not found")
 
 
 @router.post(
@@ -113,7 +126,30 @@ async def get_all_liability_payments(
 ):
     """Get all liability payments"""
     service = LiabilityService(db, current_user.id)
-    # The service method needs to return consistent data with schema
-    # The schema for LiabilityPayment doesn't strictly include liability name unless extended.
-    # For now, let's return the basic payment list.
     return await service.get_all_payments_grouped()
+
+
+@router.put("/payments/{payment_id}", response_model=LiabilityPayment)
+async def update_liability_payment(
+    payment_id: UUID,
+    payment: LiabilityPaymentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = LiabilityService(db, current_user.id)
+    updated = await service.update_payment(payment_id, payment)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    return updated
+
+
+@router.delete("/payments/{payment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_liability_payment(
+    payment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = LiabilityService(db, current_user.id)
+    deleted = await service.delete_payment(payment_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Payment not found")

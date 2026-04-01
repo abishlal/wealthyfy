@@ -8,7 +8,7 @@ from decimal import Decimal
 
 # Expense Schemas
 class ExpenseBase(BaseModel):
-    purchase_date: date
+    purchase_date: dt.date
     item: str
     amount: Decimal
     category_id: UUID
@@ -45,7 +45,7 @@ class Expense(ExpenseBase):
 
 # Income Schemas
 class IncomeBase(BaseModel):
-    date: date
+    date: dt.date
     income_source_id: UUID
     account_id: UUID
     description: Optional[str] = None
@@ -76,7 +76,7 @@ class LiabilityBase(BaseModel):
     total_payable_amount: Optional[Decimal] = (
         None  # manual override; auto = emi * term_months
     )
-    start_date: date
+    start_date: dt.date
     term_months: int
     due_day: Optional[int] = None
     notes: Optional[str] = None
@@ -95,7 +95,7 @@ class LiabilityUpdate(BaseModel):
     emi_amount: Optional[Decimal] = None
     term_months: Optional[int] = None
     total_payable_amount: Optional[Decimal] = None
-    start_date: Optional[date] = None
+    start_date: Optional[dt.date] = None
     due_day: Optional[int] = None
     notes: Optional[str] = None
 
@@ -114,12 +114,17 @@ class Liability(LiabilityBase):
 
 class LiabilityPaymentBase(BaseModel):
     liability_id: UUID
-    payment_date: date
+    payment_date: dt.date
     amount: Decimal
 
 
 class LiabilityPaymentCreate(LiabilityPaymentBase):
     pass
+
+
+class LiabilityPaymentUpdate(BaseModel):
+    payment_date: Optional[dt.date] = None
+    amount: Optional[Decimal] = None
 
 
 class LiabilityPayment(LiabilityPaymentBase):
@@ -131,7 +136,7 @@ class LiabilityPayment(LiabilityPaymentBase):
 
 # Investment Schemas
 class InvestmentBase(BaseModel):
-    date: date
+    date: dt.date
     investment_type_id: UUID
     institution_id: UUID
     amount: Decimal
@@ -140,6 +145,14 @@ class InvestmentBase(BaseModel):
 
 class InvestmentCreate(InvestmentBase):
     pass
+
+
+class InvestmentUpdate(BaseModel):
+    date: Optional[dt.date] = None
+    investment_type_id: Optional[UUID] = None
+    institution_id: Optional[UUID] = None
+    amount: Optional[Decimal] = None
+    notes: Optional[str] = None
 
 
 class Investment(InvestmentBase):
@@ -170,7 +183,7 @@ class Budget(BudgetBase):
 
 # Receivable Schemas
 class ReceivableBase(BaseModel):
-    date: date
+    date: dt.date
     person_name: str
     total_owed: Decimal
     amount_received: Decimal = Decimal("0")
@@ -224,7 +237,7 @@ class FriendTransactionBase(BaseModel):
     reference_type: Optional[str] = None
     reference_id: Optional[UUID] = None
     description: Optional[str] = None
-    date: date
+    date: dt.date
     is_settlement: bool = False
 
 
@@ -261,7 +274,7 @@ class FriendBalance(BaseModel):
 
 class FriendLedgerEntry(BaseModel):
     id: UUID
-    date: date
+    date: dt.date
     reference_type: str
     amount: Decimal
     direction: str

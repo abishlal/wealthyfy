@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import settingsApi, { type LookupValue } from '../api/settingsApi';
-import { Plus, IndianRupee, X, Download, TrendingDown, CreditCard, Pencil } from 'lucide-react';
+import { Plus, IndianRupee, X, Download, TrendingDown, CreditCard, Pencil, Trash, Edit } from 'lucide-react';
 
 interface Liability {
     id: string;
@@ -48,8 +48,10 @@ const LiabilitiesPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
     const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null);
     const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
+    const [editingPayment, setEditingPayment] = useState<LiabilityPayment | null>(null);
     const [lenders, setLenders] = useState<LookupValue[]>([]);
     const [liabilitiesTypes, setLiabilitiesTypes] = useState<LookupValue[]>([]);
     const [lenderMap, setLenderMap] = useState<Record<string, string>>({});
@@ -60,6 +62,11 @@ const LiabilitiesPage: React.FC = () => {
 
     const [paymentData, setPaymentData] = useState({
         payment_date: new Date().toISOString().split('T')[0],
+        amount: ''
+    });
+
+    const [paymentEditData, setPaymentEditData] = useState({
+        payment_date: '',
         amount: ''
     });
 
@@ -147,16 +154,16 @@ const LiabilitiesPage: React.FC = () => {
         e.preventDefault();
         if (!editingLiability) return;
         try {
-            const payload: any = {
+            const payload = {
                 liability_name: editFormData.liability_name,
                 lender_id: editFormData.lender_id,
                 liabilities_type_id: editFormData.liabilities_type_id,
-                original_amount: parseFloat(editFormData.original_amount),
-                interest_rate: parseFloat(editFormData.interest_rate),
-                emi_amount: parseFloat(editFormData.emi_amount),
-                term_months: parseInt(editFormData.term_months),
+                original_amount: parseFloat(editFormData.original_amount) || 0,
+                interest_rate: parseFloat(editFormData.interest_rate) || 0,
+                emi_amount: parseFloat(editFormData.emi_amount) || 0,
+                term_months: parseInt(editFormData.term_months) || 0,
                 start_date: editFormData.start_date,
-                notes: editFormData.notes || null,
+                notes: editFormData.notes?.trim() || null,
                 total_payable_amount: editFormData.total_payable_amount
                     ? parseFloat(editFormData.total_payable_amount)
                     : null
@@ -216,6 +223,51 @@ const LiabilitiesPage: React.FC = () => {
     const openAddModal = () => {
         setFormData({ ...emptyForm });
         setIsModalOpen(true);
+    };
+
+    const handleDelete = async (liability: Liability) => {
+        if (!window.confirm(`Are you sure you want to delete "${liability.liability_name}"? This will also remove all associated payment records.`)) return;
+        try {
+            await api.delete(`/liabilities/${liability.id}`);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting liability', error);
+        }
+    };
+
+    const openEditPaymentModal = (payment: LiabilityPayment) => {
+        setEditingPayment(payment);
+        setPaymentEditData({
+            payment_date: payment.payment_date,
+            amount: String(payment.amount)
+        });
+        setIsEditPaymentModalOpen(true);
+    };
+
+    const handleEditPaymentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingPayment) return;
+        try {
+            await api.put(`/liabilities/payments/${editingPayment.id}`, {
+                payment_date: paymentEditData.payment_date,
+                amount: parseFloat(paymentEditData.amount) || 0
+            });
+            setIsEditPaymentModalOpen(false);
+            setEditingPayment(null);
+            fetchData();
+        } catch (error) {
+            console.error('Error updating payment', error);
+        }
+    };
+
+    const handleDeletePayment = async (payment: LiabilityPayment) => {
+        if (!window.confirm(`Delete this payment of ₹${payment.amount.toLocaleString('en-IN')} on ${payment.payment_date}?`)) return;
+        try {
+            await api.delete(`/liabilities/payments/${payment.id}`);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting payment', error);
+        }
     };
 
     const getLiabilityName = (id: string) => {
@@ -365,6 +417,13 @@ const LiabilitiesPage: React.FC = () => {
                                         >
                                             <Pencil size={15} />
                                         </button>
+                                        <button
+                                            onClick={() => handleDelete(liability)}
+                                            title="Delete Liability"
+                                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <Trash size={15} />
+                                        </button>
                                     </div>
                                 </div>
                                 {liability.notes && (
@@ -422,6 +481,7 @@ const LiabilitiesPage: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liability</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -430,11 +490,17 @@ const LiabilitiesPage: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.payment_date}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{getLiabilityName(payment.liability_id)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">+₹{payment.amount.toLocaleString('en-IN')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-3">
+                                            <button onClick={() => openEditPaymentModal(payment)} title="Edit Payment" className="text-indigo-600 hover:text-indigo-900 transition-colors"><Edit size={15} /></button>
+                                            <button onClick={() => handleDeletePayment(payment)} title="Delete Payment" className="text-red-500 hover:text-red-700 transition-colors"><Trash size={15} /></button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {payments.length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">No payments recorded yet.</td>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No payments recorded yet.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -494,6 +560,32 @@ const LiabilitiesPage: React.FC = () => {
                             <div className="flex justify-end pt-4">
                                 <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="mr-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-md">Cancel</button>
                                 <button type="submit" className="px-4 py-2 text-white bg-green-600 rounded-md">Record</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Payment Modal */}
+            {isEditPaymentModalOpen && editingPayment && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-sm w-full p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold">Edit Payment</h3>
+                            <button onClick={() => { setIsEditPaymentModalOpen(false); setEditingPayment(null); }} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleEditPaymentSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Payment Date</label>
+                                <input type="date" required value={paymentEditData.payment_date} onChange={(e) => setPaymentEditData({ ...paymentEditData, payment_date: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Amount (₹)</label>
+                                <input type="number" step="0.01" required value={paymentEditData.amount} onChange={(e) => setPaymentEditData({ ...paymentEditData, amount: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" />
+                            </div>
+                            <div className="flex justify-end pt-4">
+                                <button type="button" onClick={() => { setIsEditPaymentModalOpen(false); setEditingPayment(null); }} className="mr-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-md">Cancel</button>
+                                <button type="submit" className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Update</button>
                             </div>
                         </form>
                     </div>

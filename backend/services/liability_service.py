@@ -114,3 +114,49 @@ class LiabilityService:
             .order_by(LiabilityPayment.payment_date.desc())
         )
         return result.scalars().all()
+
+    async def delete_liability(self, liability_id: UUID):
+        result = await self.db.execute(
+            select(Liability).filter(
+                Liability.id == liability_id, Liability.user_id == self.user_id
+            )
+        )
+        db_liability = result.scalar_one_or_none()
+        if not db_liability:
+            return False
+        await self.db.delete(db_liability)
+        await self.db.commit()
+        return True
+
+    async def update_payment(self, payment_id: UUID, data):
+        """Update a liability payment — only if the parent liability belongs to this user."""
+        result = await self.db.execute(
+            select(LiabilityPayment)
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(LiabilityPayment.id == payment_id, Liability.user_id == self.user_id)
+        )
+        db_payment = result.scalar_one_or_none()
+        if not db_payment:
+            return None
+
+        update_data = data.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(db_payment, field, value)
+
+        await self.db.commit()
+        await self.db.refresh(db_payment)
+        return db_payment
+
+    async def delete_payment(self, payment_id: UUID):
+        """Delete a liability payment — only if the parent liability belongs to this user."""
+        result = await self.db.execute(
+            select(LiabilityPayment)
+            .join(Liability, LiabilityPayment.liability_id == Liability.id)
+            .where(LiabilityPayment.id == payment_id, Liability.user_id == self.user_id)
+        )
+        db_payment = result.scalar_one_or_none()
+        if not db_payment:
+            return False
+        await self.db.delete(db_payment)
+        await self.db.commit()
+        return True

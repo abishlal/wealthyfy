@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import settingsApi, { type LookupValue } from '../api/settingsApi';
-import { Plus, X, Download, IndianRupee, PieChart, Activity } from 'lucide-react';
+import { Plus, X, Download, IndianRupee, PieChart, Activity, Edit, Trash } from 'lucide-react';
 
 interface Investment {
     id: string;
@@ -12,22 +12,25 @@ interface Investment {
     notes?: string;
 }
 
+const emptyForm = {
+    date: new Date().toISOString().split('T')[0],
+    investment_type_id: '',
+    amount: '',
+    institution_id: '',
+    notes: ''
+};
+
 const InvestmentsPage: React.FC = () => {
     const [investments, setInvestments] = useState<Investment[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [investmentTypes, setInvestmentTypes] = useState<LookupValue[]>([]);
     const [institutions, setInstitutions] = useState<LookupValue[]>([]);
     const [typeMap, setTypeMap] = useState<Record<string, string>>({});
     const [instMap, setInstMap] = useState<Record<string, string>>({});
 
-    const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
-        investment_type_id: '',
-        amount: '',
-        institution_id: '',
-        notes: ''
-    });
+    const [formData, setFormData] = useState({ ...emptyForm });
 
     const fetchData = async () => {
         setLoading(true);
@@ -85,9 +88,25 @@ const InvestmentsPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload = { ...formData, amount: parseFloat(formData.amount) };
-            await api.post('/investments/', payload);
+            if (editingId) {
+                const payload = {
+                    date: formData.date,
+                    investment_type_id: formData.investment_type_id,
+                    institution_id: formData.institution_id,
+                    amount: parseFloat(formData.amount) || 0,
+                    notes: formData.notes?.trim() || null,
+                };
+                await api.put(`/investments/${editingId}`, payload);
+            } else {
+                const payload = {
+                    ...formData,
+                    amount: parseFloat(formData.amount),
+                    notes: formData.notes || null,
+                };
+                await api.post('/investments/', payload);
+            }
             setIsModalOpen(false);
+            setEditingId(null);
             resetForm();
             fetchData();
         } catch (error) {
@@ -106,9 +125,32 @@ const InvestmentsPage: React.FC = () => {
     };
 
     const openAddModal = () => {
+        setEditingId(null);
         resetForm();
         setIsModalOpen(true);
-    }
+    };
+
+    const openEditModal = (inv: Investment) => {
+        setEditingId(inv.id);
+        setFormData({
+            date: inv.date,
+            investment_type_id: inv.investment_type_id,
+            amount: String(inv.amount),
+            institution_id: inv.institution_id,
+            notes: inv.notes || ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleDelete = async (inv: Investment) => {
+        if (!window.confirm(`Are you sure you want to delete this investment of ₹${inv.amount.toLocaleString('en-IN')}?`)) return;
+        try {
+            await api.delete(`/investments/${inv.id}`);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting investment', error);
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -167,9 +209,7 @@ const InvestmentsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Recent Investments Grid (Optional - maybe just use table for history) */}
-            {/* Let's use a Table for Transaction History as requested */}
-
+            {/* Transaction History Table */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-bold text-gray-800">Transaction History</h3>
@@ -183,6 +223,7 @@ const InvestmentsPage: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -197,11 +238,29 @@ const InvestmentsPage: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">₹{(inv.amount || 0).toLocaleString('en-IN')}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{inv.notes}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-3">
+                                            <button
+                                                onClick={() => openEditModal(inv)}
+                                                title="Edit Investment"
+                                                className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(inv)}
+                                                title="Delete Investment"
+                                                className="text-red-500 hover:text-red-700 transition-colors"
+                                            >
+                                                <Trash size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {investments.length === 0 && !loading && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No investments recorded.</td>
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No investments recorded.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -209,14 +268,13 @@ const InvestmentsPage: React.FC = () => {
                 </div>
             </div>
 
-
-            {/* Modal */}
+            {/* Add / Edit Investment Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg max-w-md w-full p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Add New Investment</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>
+                            <h3 className="text-lg font-bold">{editingId ? 'Edit Investment' : 'Add New Investment'}</h3>
+                            <button onClick={() => { setIsModalOpen(false); setEditingId(null); }} className="text-gray-500 hover:text-gray-700"><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div><label className="block text-sm font-medium text-gray-700">Date</label><input type="date" required value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" /></div>
@@ -238,8 +296,10 @@ const InvestmentsPage: React.FC = () => {
                             <div><label className="block text-sm font-medium text-gray-700">Notes</label><textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="mt-1 block w-full border p-2 rounded-md" /></div>
 
                             <div className="flex justify-end pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="mr-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-md">Cancel</button>
-                                <button type="submit" className="px-4 py-2 text-white bg-purple-600 rounded-md">Save</button>
+                                <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null); }} className="mr-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-md">Cancel</button>
+                                <button type="submit" className="px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700">
+                                    {editingId ? 'Update' : 'Save'}
+                                </button>
                             </div>
                         </form>
                     </div>

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
 import io
 from database import get_db
-from schemas.schemas import Investment, InvestmentCreate
+from schemas.schemas import Investment, InvestmentCreate, InvestmentUpdate
 from services.investment_service import InvestmentService
 from services.export_service import ExportService
 from auth import get_current_user, User
@@ -60,3 +60,29 @@ async def read_investments(
 ):
     service = InvestmentService(db, current_user.id)
     return await service.get_investments(skip, limit)
+
+
+@router.put("/{investment_id}", response_model=Investment)
+async def update_investment(
+    investment_id: UUID,
+    investment: InvestmentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = InvestmentService(db, current_user.id)
+    updated = await service.update_investment(investment_id, investment)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Investment not found")
+    return updated
+
+
+@router.delete("/{investment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_investment(
+    investment_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = InvestmentService(db, current_user.id)
+    deleted = await service.delete_investment(investment_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Investment not found")
